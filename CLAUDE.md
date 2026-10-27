@@ -84,8 +84,9 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
   - The code may not show while logged in to Squarespace. Test logged out, or use Preview in Safe Mode.
   - Don't put the finder on a page inside an index page, and turn Ajax loading off if it breaks rendering.
 - [x] GitHub account exists (username `JWC-iv`). Use GitHub Pages to host `site/` assets and `data/venues.json`.
-- [x] Git 2.56 and GitHub CLI (`gh`) 2.103 installed via winget (2026-10-27). Python 3.13 is installed (`py`). The project folder is a Git repo on branch `main`, with no commits yet.
-- [ ] John signs in with `gh auth login`. Then set commit name/email (use the GitHub noreply address so the personal email isn't published), make the first commit, and create the repo.
+- [x] Git 2.56 and GitHub CLI (`gh`) 2.103 installed via winget (2026-10-27). Python 3.13 is installed (`py`). The project folder is a Git repo on branch `main`.
+- [x] John is signed in to `gh` as JWC-iv. Commits in this repo use name "John" and the GitHub noreply email (set in the repo's own Git settings) so the personal email isn't published.
+- [ ] Create the GitHub repo and turn on Pages (name and public/private not decided yet).
 - [ ] Atlanta sample dataset
 - [ ] UI prototype (Bachan's layout, Banya Press styling)
 - [ ] National candidate pull
