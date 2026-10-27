@@ -55,9 +55,12 @@ USEFUL_LINK = re.compile(
 SYSTEM_PROMPT = """You review websites of US businesses for a sauna finder run by Banya Press. \
 You get the text of a few pages from one business's own website. Report only what those pages clearly state.
 
-First decide `sells_public_sauna_access`: true only if a member of the public can pay to use a sauna \
-(or banya / steam room / hammam / infrared sauna) at this business: by day pass, single session, \
-booking, or a membership open to the public. False for: sauna sellers, builders and installers; \
+First decide `sells_public_sauna_access`: true only if a member of the public can pay to sit in a heated \
+room at this business (sauna, banya, steam room, hammam, or an infrared sauna cabin): by day pass, single \
+session, booking, or a membership open to the public. Wellness clinics count when they have such a room. \
+False for: infrared sauna blankets, capsules, pods or domes where you lie down with your head outside \
+(not a room), unless the business also has a real sauna room; businesses that are not open yet; \
+sauna sellers, builders and installers; \
 spas where the sauna is only a perk inside a massage or facial appointment and is not sold on its own; \
 hotels where the sauna is only for hotel guests; private homes and rentals; massage-only businesses; \
 businesses whose pages never mention a sauna; and sites that are broken, parked or about a different business.
@@ -66,8 +69,9 @@ venue_type, when access is sold:
 - banya: Russian / Eastern European style bathhouse
 - korean_spa: Korean jjimjilbang or Korean-style spa
 - bathhouse: other multi-room social bathhouse (Japanese, Turkish, modern social bathhouse)
-- sauna_studio: sauna-focused studio or club, including infrared studios and public sauna clubs
-- contrast_therapy: studio built around hot/cold contrast (sauna + cold plunge) and recovery
+- sauna_studio: sauna-focused studio or club, including infrared studios, public sauna clubs, and \
+wellness or recovery clinics with a sauna room but no cold plunge
+- contrast_therapy: only when the pages show both a sauna and a cold plunge (or ice bath) offered together
 - mobile_or_floating_sauna: trailer, boat, pop-up or rentable mobile sauna open to the public
 - day_spa_day_pass: day spa or resort spa that sells a spa day pass with sauna access to non-guests
 - gym: gym, fitness club, YMCA or athletic club where the sauna comes with a gym membership or day pass

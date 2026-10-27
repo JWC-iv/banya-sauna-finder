@@ -10,6 +10,7 @@ John is building this and is new to web development. Explain each step in plain 
 
 ## Scope
 - **Include** these venue types: `bathhouse`, `banya`, `korean_spa`, `sauna_studio`, `contrast_therapy`, `mobile_or_floating_sauna`, `day_spa_day_pass` (only spas that sell a sauna-access day pass).
+- **The rule (John, 2026-10-27): if you can't sit in a heated room, it's out.** Infrared sauna cabins count, including at wellness and recovery clinics (Restore Hyper Wellness, iCRYO and similar). Infrared blankets, capsules, pods and domes with your head outside do not. Places not open yet are out.
 - **Exclude hotels.** Do not store them.
 - **Gyms are parked, not discarded.** `gym` is a valid `venue_type` that the public page filters out. Write gym candidates found by the pipeline to `data/parked/gyms.json` so they can be added later without redoing the pipeline.
 
@@ -74,6 +75,7 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
 2. `prefilter.py`: cheap rules, no AI. Drop obvious non-venues (nail, med spa, hotel, apartments, stores, contractors) and keep anything whose name clearly says sauna/banya/bathhouse.
 3. `dedupe.py`: merge records with similar names within about 150 m.
 4. `check_websites.py` (replaces separate classify and enrich steps): fetch each candidate's own website and ask Claude (Anthropic API) one question first: does this business sell sauna access to the public? Fails are dropped cheaply. Passes get `venue_type` and the schema fields, each with the URL and a short quote as evidence. Gyms go to `data/parked/`, hotels are dropped. Anything not clearly stated becomes `unknown`; never guess. Needs John's Anthropic API key in a git-ignored `.env` file, with a spending limit he sets.
+   - Model: Claude Haiku 5.5, run as a batch job (decided 2026-10-27). In a 45-venue test it agreed with Opus 5.5 on 42/45 yes/no answers, its proof quotes were real, and it cost about 0.16 cents per site versus about 5 cents for Opus. Full US run estimated at about $3.
 5. `validate.py`: check required fields, enum values, US bounding box, and duplicate ids. This runs before every publish.
 6. `coverage.py`: fill rate per filter field.
 7. Later: a "Submit your sauna / Suggest a fix" form so owners and visitors fill the unknowns (British Sauna Society model).
