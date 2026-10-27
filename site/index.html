@@ -17,7 +17,8 @@
   </div>
   <script>
     window.BANYA_FINDER_CONFIG = {
-      dataUrl: '../data/sample_sf.json',
+      // Add ?data=venues to the address to test with the full venue list instead of the San Francisco sample.
+      dataUrl: /[?&]data=venues/.test(location.search) ? '../data/venues.json' : '../data/sample_sf.json',
       // The sample is too small for the 90% coverage rule, so show every filter while building.
       showAllFilters: true
     };

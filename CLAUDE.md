@@ -61,6 +61,7 @@ Never store data from the Google Places API except place_id. Google's terms forb
 Built around three visitor questions: can I go today, what kind of heat, what's the experience.
 - **Quick toggles, always visible:** Open now · Walk-ins (`access = walk_in`) · Cold plunge (any value except none/unknown) · Wood-fired · Outdoor · Banya Approved.
 - **"More filters" panel:** Type · Heat · Private or social (`session_type`).
+- **Infrared-only places are hidden by default** (John, 2026-10-27). In the first national run 71% of venues were infrared-only (mostly Restore Hyper Wellness and Perspire). A dashed "+ Infrared studios (N)" chip adds them; picking Infrared under Heat also adds them. Places with any other heat source, or unknown heat, always show.
 - **Later, once data exists:** women-only hours, clothing-optional, rituals (aufguss, venik), price. Gender policy and attire are collected but are not launch filters; websites rarely state them clearly.
 - A filter only ships once its field is filled (not `unknown`) for at least 90% of published venues. `scripts/coverage.py` reports this.
 - **Banya Approved** criteria are TBD by the owner. The filter is controlled by `SHOW_BANYA_APPROVED` in the site config and stays hidden until enough venues are reviewed.

@@ -49,6 +49,13 @@
 
   var HAS_PLUNGE = ['tub', 'pool', 'natural_water', 'yes_unspecified'];
 
+  // Infrared-only places (clinics, private infrared suites) are hidden until the visitor adds them.
+  // Anything with another heat source, or an unknown one, always shows.
+  function isInfraredOnly(v) {
+    var h = v.heat_types || [];
+    return h.length === 1 && h[0] === 'infrared';
+  }
+
   // Quick toggles, always on screen. `known` says whether a venue has data for it,
   // which decides if the toggle has enough coverage to show.
   var QUICK = [
@@ -205,6 +212,7 @@
     this.venues = [];
     this.active = {};        // filter key -> list of chosen values
     this.quick = {};         // quick toggle id -> true when on
+    this.withInfrared = false;
     this.origin = null;      // { lat, lng, label } after a search
     this.selectedId = null;
     this.view = 'list';
@@ -294,9 +302,13 @@
     var quick = QUICK.filter(function (q) {
       return (!q.onlyIf || CONFIG[q.onlyIf]) && self.hasCoverage(q.known);
     });
-    this.$('.bf-quick-chips').innerHTML = quick.map(function (q) {
-      return '<button type="button" class="bf-chip" aria-pressed="false" data-quick="' + q.id + '">' + esc(q.label) + '</button>';
-    }).join('');
+    var infraredCount = venues.filter(isInfraredOnly).length;
+    this.$('.bf-quick-chips').innerHTML = (infraredCount ?
+      '<button type="button" class="bf-chip bf-chip--add" aria-pressed="false" data-infrared>+ Infrared studios (' +
+      infraredCount.toLocaleString() + ')</button>' : '') +
+      quick.map(function (q) {
+        return '<button type="button" class="bf-chip" aria-pressed="false" data-quick="' + q.id + '">' + esc(q.label) + '</button>';
+      }).join('');
 
     var visible = FILTERS.filter(function (f) {
       return self.hasCoverage(function (v) { return hasValue(v, f); });
@@ -330,7 +342,9 @@
       var on = chip.getAttribute('aria-pressed') !== 'true';
       chip.setAttribute('aria-pressed', String(on));
       var quickId = chip.getAttribute('data-quick');
-      if (quickId) {
+      if (chip.hasAttribute('data-infrared')) {
+        self.withInfrared = on;
+      } else if (quickId) {
         self.quick[quickId] = on;
       } else {
         var key = chip.getAttribute('data-key'), val = chip.getAttribute('data-val');
@@ -346,6 +360,7 @@
   Finder.prototype.clearFilters = function () {
     this.active = {};
     this.quick = {};
+    this.withInfrared = false;
     this.root.querySelectorAll('.bf-filters .bf-chip, .bf-quick .bf-chip').forEach(function (c) {
       c.setAttribute('aria-pressed', 'false');
     });
@@ -355,6 +370,8 @@
   // Within one filter, any chosen value matches. Across filters, all must match.
   Finder.prototype.matches = function (v) {
     var active = this.active;
+    var pickedInfrared = (active.heat_types || []).indexOf('infrared') !== -1;
+    if (isInfraredOnly(v) && !this.withInfrared && !pickedInfrared) return false;
     var ok = Object.keys(active).every(function (key) {
       var chosen = active[key];
       if (!chosen.length) return true;
@@ -379,13 +396,20 @@
     var list = this.results();
     this.current = list;
     var n = list.length;
-    this.$('.bf-count').textContent = n + (n === 1 ? ' sauna' : ' saunas') +
-      (this.origin ? ' near ' + this.origin.label : '');
+    this.$('.bf-count').textContent = n.toLocaleString() + (n === 1 ? ' sauna' : ' saunas') +
+      (this.origin ? ' · closest to ' + this.origin.label + ' first' : '');
     this.$('.bf-list').innerHTML = n ? list.map(cardHtml).join('') :
       '<li class="bf-empty">No saunas match these filters. <button type="button" class="bf-link-btn" data-clear>Clear filters</button></li>';
     if (this.selectedId) this.markSelected(this.selectedId);
     this.updateMap();
   };
+
+  // "+12065683240" or "2065683240" -> "(206) 568-3240"; anything else is shown as stored.
+  function formatPhone(p) {
+    var d = String(p).replace(/\D/g, '');
+    if (d.length === 11 && d[0] === '1') d = d.slice(1);
+    return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : p;
+  }
 
   function cardHtml(v) {
     var tags = [];
@@ -404,7 +428,7 @@
       '<h3>' + esc(v.name) + approved + '</h3>' +
       '<p class="bf-meta">' + meta.map(function (m, i) { return i === meta.length - 1 && open !== null ? m : esc(m); }).join(' · ') + '</p>' +
       '<p>' + esc(v.address) + ', ' + esc(v.city) + ', ' + esc(v.state) + ' ' + esc(v.zip || '') + '</p>' +
-      (v.phone ? '<p><a href="tel:' + esc(v.phone.replace(/[^\d+]/g, '')) + '">' + esc(v.phone) + '</a></p>' : '') +
+      (v.phone ? '<p><a href="tel:' + esc(v.phone.replace(/[^\d+]/g, '')) + '">' + esc(formatPhone(v.phone)) + '</a></p>' : '') +
       (tags.length ? '<div class="bf-tags">' + tags.map(function (t) { return '<span class="bf-tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
       (v.website ? '<a class="bf-accent" href="' + esc(v.website) + '" target="_blank" rel="noopener">Visit website →</a>' : '') +
       '</li>';
