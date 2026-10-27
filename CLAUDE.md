@@ -87,7 +87,8 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
 - [x] Git 2.56 and GitHub CLI (`gh`) 2.103 installed via winget (2026-10-27). Python 3.13 is installed (`py`). The project folder is a Git repo on branch `main`.
 - [x] John is signed in to `gh` as JWC-iv. Commits in this repo use name "John" and the GitHub noreply email (set in the repo's own Git settings) so the personal email isn't published.
 - [x] Public GitHub repo created: https://github.com/JWC-iv/banya-sauna-finder (remote `origin`, branch `main`). Push after each commit.
-- [ ] Turn on GitHub Pages once `site/` has files.
+- [x] GitHub Pages is on (2026-10-27), serving the `main` branch root. Prototype: https://jwc-iv.github.io/banya-sauna-finder/site/ . Every push updates it within a minute or two.
+  - Because Pages serves the whole repo, `data/sample_sf.json` is publicly reachable too. It is public-website facts only and the real finder never loads it, but keep anything private out of this repo.
 - [x] Sample dataset: `data/sample_sf.json` (San Francisco, 7 venues; Atlanta dropped)
   - Schema gaps found: no `heat_types` value for a dry sauna whose heater type isn't stated (Kabuki, Onsen, Archimedes' Finnish room, Vital Ice), no `cold_plunge` value for "has one, type unknown", and no `gender_policy` value for women-only (Pearl is stored as `segregated`). Decide before `enrich.py`.
   - The Overpass (OpenStreetMap) API timed out from this PC on 2026-10-27; retry or use a different mirror for the national pull.
