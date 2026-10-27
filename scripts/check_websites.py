@@ -241,9 +241,22 @@ def prepare(items):
 # ---------- Modes ----------
 def run_sample(client, model, n):
     items = candidates()
-    random.seed(7)
-    picked = random.sample(items, min(n, len(items)))
-    prepared = prepare(picked)
+    # Reuse the same sample for every model so their answers can be compared side by side.
+    keys_path = RAW / "sample_keys.json"
+    if keys_path.exists():
+        keys = set(json.loads(keys_path.read_text()))
+        picked = [it for it in items if it[0]["key"] in keys]
+    else:
+        random.seed(7)
+        picked = random.sample(items, min(n, len(items)))
+        keys_path.write_text(json.dumps([g["key"] for g, _ in picked]))
+    # Fetch the pages once, so every model reads exactly the same text.
+    prompts_path = RAW / "sample_prompts.json"
+    if prompts_path.exists():
+        prepared = json.loads(prompts_path.read_text(encoding="utf-8"))
+    else:
+        prepared = prepare(picked)
+        prompts_path.write_text(json.dumps(prepared, default=str), encoding="utf-8")
     print(f"Checking {len(prepared)} places with {model}...")
     results, tin, tout = [], 0, 0
     def ask(p):

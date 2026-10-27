@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
 PAGES = RAW / "pages"
 USER_AGENT = "Mozilla/5.0 (compatible; banya-sauna-finder/0.1; +https://github.com/JWC-iv/banya-sauna-finder)"
-WORKERS = 32
+WORKERS = 96
 
 SAUNA_WORDS = re.compile(
     r"\bsaunas?\b|steam room|\bbanyas?\b|cold plunge|plunge pool|ice bath|hammam|jjimjil|jimjil|"
@@ -46,7 +46,7 @@ def fetch(url):
     if "://" not in url:
         url = "https://" + url
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html"})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with urllib.request.urlopen(req, timeout=8) as r:
         if "html" not in (r.headers.get("Content-Type") or "html"):
             return r.geturl(), ""
         return r.geturl(), r.read(2_000_000).decode("utf-8", "replace")
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         for n, f in enumerate(as_completed(futures), 1):
             r = f.result()
             done[r["key"]] = r
-            if n % 500 == 0 or n == len(futures):
+            if n % 250 == 0 or n == len(futures):
                 results_path.write_text(json.dumps(list(done.values())), encoding="utf-8")
                 passed = sum(1 for x in done.values() if x["passes"])
                 print(f"  {n}/{len(futures)} checked, {passed} pass so far", flush=True)
