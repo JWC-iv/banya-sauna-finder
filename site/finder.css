@@ -80,6 +80,10 @@
 }
 .bf-filter-toggle[aria-expanded="true"] { background: var(--bf-ink); color: var(--bf-sand); }
 
+/* Quick toggles row */
+.bf-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 16px 0 12px; }
+.bf-quick .bf-filter-toggle[hidden] { display: none; }
+
 /* Filter panel */
 .bf-filters {
   background: var(--bf-stone);

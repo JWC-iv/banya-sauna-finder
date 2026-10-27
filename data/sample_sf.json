@@ -1,5 +1,5 @@
 {
-  "note": "TEST DATA ONLY. San Francisco fixture for building the UI. Never publish this file. Field values come from each venue's own website (checked 2026-10-27); anything the site did not clearly state is 'unknown' or null. Map coordinates and ids come from Overture Maps release 2026-10-21.0, except Dogpatch Paddle (OpenStreetMap geocode).",
+  "note": "TEST DATA ONLY. San Francisco fixture for building the UI. Never publish this file. Updated 2026-10-27 to the new schema (traditional heat, yes_unspecified cold plunge, women_only, outdoor field). Field values come from each venue's own website (checked 2026-10-27); anything the site did not clearly state is 'unknown' or null. Map coordinates and ids come from Overture Maps release 2026-10-21.0, except Dogpatch Paddle (OpenStreetMap geocode).",
   "venues": [
     {
       "id": "sf-archimedes-banya",
@@ -14,8 +14,13 @@
       "phone": "(415) 206-9000",
       "website": "https://banyasf.com/",
       "hours": "Mo,We-Fr 12:00-23:00; Sa,Su 10:00-23:00",
-      "heat_types": ["banya", "steam"],
+      "heat_types": [
+        "banya",
+        "traditional",
+        "steam"
+      ],
       "cold_plunge": "pool",
+      "outdoor": true,
       "access": "unknown",
       "gender_policy": "unknown",
       "session_type": "unknown",
@@ -24,7 +29,12 @@
       "banya_approved_date": null,
       "day_pass_price_usd": null,
       "attire": "mixed",
-      "extras": ["venik", "aufguss", "massage", "food", "outdoor"],
+      "extras": [
+        "venik",
+        "aufguss",
+        "massage",
+        "food"
+      ],
       "sources": [
         "overture:ac692219-e049-4372-ba69-ed9d8fe748ed",
         "website:https://banyasf.com/",
@@ -47,8 +57,12 @@
       "phone": "(415) 922-6000",
       "website": "https://kabukisprings.com/",
       "hours": "Mo 14:00-20:00; Tu-Su 10:00-21:30",
-      "heat_types": ["steam"],
+      "heat_types": [
+        "traditional",
+        "steam"
+      ],
       "cold_plunge": "pool",
+      "outdoor": null,
       "access": "reservation_required",
       "gender_policy": "both",
       "session_type": "communal",
@@ -57,7 +71,9 @@
       "banya_approved_date": null,
       "day_pass_price_usd": 49,
       "attire": "mixed",
-      "extras": ["massage"],
+      "extras": [
+        "massage"
+      ],
       "sources": [
         "overture:c81fc2ef-3662-4997-abda-ecd33a953ed0",
         "website:https://kabukisprings.com/",
@@ -80,8 +96,12 @@
       "phone": "(415) 441-4987",
       "website": "https://www.onsensf.com/",
       "hours": "Mo,We 16:00-22:00; Th 14:00-22:00; Fr-Su 10:00-22:00",
-      "heat_types": ["steam"],
-      "cold_plunge": "unknown",
+      "heat_types": [
+        "traditional",
+        "steam"
+      ],
+      "cold_plunge": "yes_unspecified",
+      "outdoor": null,
       "access": "unknown",
       "gender_policy": "both",
       "session_type": "communal",
@@ -90,7 +110,9 @@
       "banya_approved_date": null,
       "day_pass_price_usd": 50,
       "attire": "mixed",
-      "extras": ["food"],
+      "extras": [
+        "food"
+      ],
       "sources": [
         "overture:cf2766f0-023f-4ff1-8508-e370a95381a2",
         "website:https://www.onsensf.com/",
@@ -113,6 +135,7 @@
       "hours": null,
       "heat_types": [],
       "cold_plunge": "unknown",
+      "outdoor": null,
       "access": "unknown",
       "gender_policy": "unknown",
       "session_type": "unknown",
@@ -144,15 +167,18 @@
       "hours": "Mo-Su 06:45-19:45",
       "heat_types": [],
       "cold_plunge": "unknown",
+      "outdoor": null,
       "access": "reservation_required",
-      "gender_policy": "segregated",
+      "gender_policy": "women_only",
       "session_type": "unknown",
       "banya_approved": null,
       "banya_approved_notes": null,
       "banya_approved_date": null,
       "day_pass_price_usd": null,
       "attire": "unknown",
-      "extras": ["massage"],
+      "extras": [
+        "massage"
+      ],
       "sources": [
         "overture:432b1aae-564c-4c81-a02c-94284a221e24",
         "website:https://www.pearlspasf.com/"
@@ -173,7 +199,8 @@
       "website": "https://dogpatchpaddle.com/sauna",
       "hours": "Tu-Su 09:00-17:00",
       "heat_types": [],
-      "cold_plunge": "unknown",
+      "cold_plunge": "yes_unspecified",
+      "outdoor": true,
       "access": "reservation_required",
       "gender_policy": "unknown",
       "session_type": "both",
@@ -202,8 +229,12 @@
       "phone": "(415) 300-0769",
       "website": "https://www.vitalicesf.com/",
       "hours": null,
-      "heat_types": ["infrared"],
-      "cold_plunge": "unknown",
+      "heat_types": [
+        "traditional",
+        "infrared"
+      ],
+      "cold_plunge": "yes_unspecified",
+      "outdoor": null,
       "access": "unknown",
       "gender_policy": "unknown",
       "session_type": "unknown",
@@ -212,7 +243,9 @@
       "banya_approved_date": null,
       "day_pass_price_usd": null,
       "attire": "unknown",
-      "extras": ["massage"],
+      "extras": [
+        "massage"
+      ],
       "sources": [
         "overture:b6f53683-2033-4b08-8da9-97a35c1700be",
         "website:https://www.vitalicesf.com/"

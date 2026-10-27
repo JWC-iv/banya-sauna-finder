@@ -37,38 +37,47 @@ lat, lng           number
 address, city, state, zip
 phone, website     string|null
 hours              OSM opening_hours syntax|null
-heat_types         array    traditional_electric | wood_fired | infrared | steam | smoke | banya
-cold_plunge        enum     none | tub | pool | natural_water | unknown
+heat_types         array    traditional | wood_fired | infrared | steam | smoke | banya
+                            (traditional = dry Finnish-style sauna, heater unstated or electric)
+cold_plunge        enum     none | tub | pool | natural_water | yes_unspecified | unknown
+outdoor            true|false|null    outdoor sauna or outdoor bathing area
 access             enum     walk_in | reservation_required | membership_only | unknown
-gender_policy      enum     coed | segregated | both | unknown
 session_type       enum     communal | private | both | unknown
+gender_policy      enum     coed | segregated | both | women_only | men_only | unknown
 banya_approved     true|false|null    editorial; null = not yet reviewed
 banya_approved_notes, banya_approved_date
 # collected later, not filters at launch:
 day_pass_price_usd number|null
 attire             enum     swimsuit | towel | nude | mixed | unknown
-extras             array    aufguss | venik | massage | food | outdoor
+extras             array    aufguss | venik | massage | food
 # provenance (required on every venue):
 sources            array    e.g. ["overture:<id>", "website", "manual"]
 last_verified      date
 ```
 Never store data from the Google Places API except place_id. Google's terms forbid caching other fields beyond 30 days.
 
-## Launch filters
-Venue type, heat type, cold plunge, access, gender policy, session type, open now, **Banya Approved**.
+## Launch filters (decided 2026-10-27)
+Built around three visitor questions: can I go today, what kind of heat, what's the experience.
+- **Quick toggles, always visible:** Open now · Walk-ins (`access = walk_in`) · Cold plunge (any value except none/unknown) · Wood-fired · Outdoor · Banya Approved.
+- **"More filters" panel:** Type · Heat · Private or social (`session_type`).
+- **Later, once data exists:** women-only hours, clothing-optional, rituals (aufguss, venik), price. Gender policy and attire are collected but are not launch filters; websites rarely state them clearly.
 - A filter only ships once its field is filled (not `unknown`) for at least 90% of published venues. `scripts/coverage.py` reports this.
 - **Banya Approved** criteria are TBD by the owner. The filter is controlled by `SHOW_BANYA_APPROVED` in the site config and stays hidden until enough venues are reviewed.
 
 ## Data pipeline (`scripts/`)
-1. `pull_candidates.py`: query the open datasets for US places with sauna-related categories or names (sauna, banya, bathhouse, bath house, spa, hammam, jjimjilbang, contrast therapy, cold plunge). Output `data/raw/candidates.json`. First list the distinct matching category values and show them to John before filtering.
+Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones list about 1,000-1,700 real venues nationally; bigger counts include gyms, massage and pools. Target about 1,500 good venues, not raw volume.
+1. `pull_candidates.py`: query the open datasets for US places with sauna-related categories or names (sauna, banya, bathhouse, bath house, spa, hammam, jjimjilbang, contrast therapy, cold plunge). Output goes to `data/raw/` (git-ignored, re-creatable). It writes `data/raw/category_report.txt`; show it to John before filtering.
+   - Seed lists: names from curated sources (city "best saunas" articles, North American Sauna Society, Finlandia Foundation public sauna list) go in `data/seeds/` as leads only. Look each one up ourselves; never copy another directory's listings.
    - Overture Maps Places (CDLA-Permissive-2.0): DuckDB over the public S3 bucket. Use the latest release.
    - Foursquare OS Places (Apache 2.0): gated download on Hugging Face, so John must accept the terms.
    - OpenStreetMap via Overpass (`leisure=sauna`, `sauna=*`). ODbL is share-alike, so keep OSM-derived rows flagged in `sources`; their license is a decision for later.
-2. `dedupe.py`: merge records with similar names within about 150 m.
-3. `classify.py`: assign `venue_type`, route gyms to `data/parked/`, and drop hotels.
-4. `enrich.py`: fetch each venue's own website and extract the schema fields. Record the source URL per field. Anything not clearly stated becomes `unknown`; never guess.
+2. `prefilter.py`: cheap rules, no AI. Drop obvious non-venues (nail, med spa, hotel, apartments, stores, contractors) and keep anything whose name clearly says sauna/banya/bathhouse.
+3. `dedupe.py`: merge records with similar names within about 150 m.
+4. `check_websites.py` (replaces separate classify and enrich steps): fetch each candidate's own website and ask Claude (Anthropic API) one question first: does this business sell sauna access to the public? Fails are dropped cheaply. Passes get `venue_type` and the schema fields, each with the URL and a short quote as evidence. Gyms go to `data/parked/`, hotels are dropped. Anything not clearly stated becomes `unknown`; never guess. Needs John's Anthropic API key in a git-ignored `.env` file, with a spending limit he sets.
 5. `validate.py`: check required fields, enum values, US bounding box, and duplicate ids. This runs before every publish.
 6. `coverage.py`: fill rate per filter field.
+7. Later: a "Submit your sauna / Suggest a fix" form so owners and visitors fill the unknowns (British Sauna Society model).
+- Competitor counts (e.g. SaunaPals per city) may be used only as a recall check to find gaps in our own sources.
 
 ## Testing workflow
 - Work locally first: the `finder` entry in `.claude/launch.json` runs `py -m http.server 8000` from the repo root; open http://localhost:8000/site/ in the browser pane.
@@ -99,6 +108,6 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
   - "Open now" understands simple OSM hours like `Mo,We-Fr 12:00-23:00` and uses each venue's state to pick its time zone.
   - Map pin is a placeholder black drop with steam lines; owner may replace it.
 - Other sauna directories checked 2026-10-27 (sauna-directory.pages.dev, saunaorplunge.pages.dev): they show Google ratings, which points to scraped Google Maps data, and they say "All rights reserved". Do not copy their data. SaunaTimes' public sauna map and the North American Sauna Society ambassador reviews are curated sources worth contacting about a partnership.
-- [ ] National candidate pull
+- [ ] National candidate pull (running 2026-10-27; Python needed the `truststore` package to trust Windows' certificates)
 - [ ] Enrichment and coverage report
 - [ ] Banya Approved criteria (owner decides)

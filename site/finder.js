@@ -32,23 +32,47 @@
       contrast_therapy: 'Contrast therapy', mobile_or_floating_sauna: 'Mobile or floating', day_spa_day_pass: 'Day spa'
     },
     heat_types: {
-      traditional_electric: 'Electric sauna', wood_fired: 'Wood-fired', infrared: 'Infrared',
+      traditional: 'Traditional', wood_fired: 'Wood-fired', infrared: 'Infrared',
       steam: 'Steam', smoke: 'Smoke sauna', banya: 'Russian banya'
     },
-    cold_plunge: { tub: 'Plunge tub', pool: 'Cold pool', natural_water: 'Natural water', none: 'No cold plunge' },
-    access: { walk_in: 'Walk-in', reservation_required: 'Reservation', membership_only: 'Members only' },
-    gender_policy: { coed: 'Co-ed', segregated: 'Single-gender', both: 'Co-ed and single-gender days' },
-    session_type: { communal: 'Communal', private: 'Private', both: 'Communal or private' }
+    cold_plunge: {
+      tub: 'Plunge tub', pool: 'Cold pool', natural_water: 'Natural water plunge',
+      yes_unspecified: 'Cold plunge', none: 'No cold plunge'
+    },
+    access: { walk_in: 'Walk-ins welcome', reservation_required: 'Book ahead', membership_only: 'Members only' },
+    gender_policy: {
+      coed: 'Co-ed', segregated: 'Single-gender', both: 'Co-ed and single-gender days',
+      women_only: 'Women only', men_only: 'Men only'
+    },
+    session_type: { communal: 'Social', private: 'Private', both: 'Social or private' }
   };
 
-  // The filter list. Add, remove or reorder entries here; nothing else needs to change.
+  var HAS_PLUNGE = ['tub', 'pool', 'natural_water', 'yes_unspecified'];
+
+  // Quick toggles, always on screen. `known` says whether a venue has data for it,
+  // which decides if the toggle has enough coverage to show.
+  var QUICK = [
+    { id: 'openNow', label: 'Open now',
+      test: function (v) { return isOpenNow(v) === true; }, known: function (v) { return !!v.hours; } },
+    { id: 'walkIn', label: 'Walk-ins',
+      test: function (v) { return v.access === 'walk_in'; }, known: function (v) { return v.access && v.access !== 'unknown'; } },
+    { id: 'coldPlunge', label: 'Cold plunge',
+      test: function (v) { return HAS_PLUNGE.indexOf(v.cold_plunge) !== -1; },
+      known: function (v) { return v.cold_plunge && v.cold_plunge !== 'unknown'; } },
+    { id: 'woodFired', label: 'Wood-fired',
+      test: function (v) { return (v.heat_types || []).indexOf('wood_fired') !== -1; },
+      known: function (v) { return (v.heat_types || []).length > 0; } },
+    { id: 'outdoor', label: 'Outdoor',
+      test: function (v) { return v.outdoor === true; }, known: function (v) { return v.outdoor != null; } },
+    { id: 'approved', label: 'Banya Approved', onlyIf: 'SHOW_BANYA_APPROVED',
+      test: function (v) { return v.banya_approved === true; }, known: function () { return true; } }
+  ];
+
+  // The "More filters" panel. Add, remove or reorder entries here; nothing else needs to change.
   var FILTERS = [
     { key: 'venue_type', label: 'Type' },
     { key: 'heat_types', label: 'Heat', isList: true },
-    { key: 'cold_plunge', label: 'Cold plunge', skip: ['none'] },
-    { key: 'access', label: 'Access' },
-    { key: 'gender_policy', label: 'Gender policy' },
-    { key: 'session_type', label: 'Sessions' }
+    { key: 'session_type', label: 'Private or social' }
   ];
 
   // Types the public page never shows (gyms are parked for later).
@@ -180,8 +204,7 @@
     this.root = root;
     this.venues = [];
     this.active = {};        // filter key -> list of chosen values
-    this.openNow = false;
-    this.approvedOnly = false;
+    this.quick = {};         // quick toggle id -> true when on
     this.origin = null;      // { lat, lng, label } after a search
     this.selectedId = null;
     this.view = 'list';
@@ -219,15 +242,18 @@
       '  <button class="bf-btn bf-btn--ghost" type="button" data-locate>Use my location</button>' +
       '</form>' +
       '<p class="bf-search-msg" aria-live="polite"></p>' +
+      '<div class="bf-quick">' +
+      '  <div class="bf-chips bf-quick-chips"></div>' +
+      '  <button class="bf-filter-toggle" type="button" aria-expanded="false">More filters</button>' +
+      '</div>' +
+      '<div class="bf-filters" hidden></div>' +
       '<div class="bf-toolbar">' +
       '  <div class="bf-tabs" role="tablist">' +
       '    <button class="bf-tab" role="tab" data-view="list" aria-selected="true">List</button>' +
       '    <button class="bf-tab" role="tab" data-view="map" aria-selected="false">Map</button>' +
       '  </div>' +
-      '  <button class="bf-filter-toggle" type="button" aria-expanded="false">Filters</button>' +
       '  <span class="bf-count" aria-live="polite"></span>' +
       '</div>' +
-      '<div class="bf-filters" hidden></div>' +
       '<div class="bf-body">' +
       '  <div class="bf-panel bf-panel--list"><ul class="bf-list"></ul></div>' +
       '  <div class="bf-panel bf-panel--map" hidden><div class="bf-map"></div></div>' +
@@ -254,20 +280,28 @@
     });
   };
 
-  // Which filters have enough data to be useful.
-  Finder.prototype.visibleFilters = function () {
+  // A filter only shows once enough venues have data for it.
+  Finder.prototype.hasCoverage = function (known) {
     var venues = this.venues;
-    return FILTERS.filter(function (f) {
-      if (CONFIG.showAllFilters || !venues.length) return true;
-      var known = venues.filter(function (v) { return hasValue(v, f); }).length;
-      return known / venues.length >= CONFIG.minFilterCoverage;
-    });
+    if (CONFIG.showAllFilters || !venues.length) return true;
+    return venues.filter(known).length / venues.length >= CONFIG.minFilterCoverage;
   };
 
   Finder.prototype.renderFilters = function () {
     var self = this;
     var venues = this.venues;
-    var html = this.visibleFilters().map(function (f) {
+
+    var quick = QUICK.filter(function (q) {
+      return (!q.onlyIf || CONFIG[q.onlyIf]) && self.hasCoverage(q.known);
+    });
+    this.$('.bf-quick-chips').innerHTML = quick.map(function (q) {
+      return '<button type="button" class="bf-chip" aria-pressed="false" data-quick="' + q.id + '">' + esc(q.label) + '</button>';
+    }).join('');
+
+    var visible = FILTERS.filter(function (f) {
+      return self.hasCoverage(function (v) { return hasValue(v, f); });
+    });
+    var html = visible.map(function (f) {
       // Only offer values that at least one venue actually has.
       var present = {};
       venues.forEach(function (v) {
@@ -283,44 +317,38 @@
       return '<div class="bf-group"><p class="bf-group-label">' + esc(f.label) + '</p><div class="bf-chips">' + chips + '</div></div>';
     }).join('');
 
-    var hoursKnown = venues.filter(function (v) { return v.hours; }).length;
-    var extras = '';
-    if (CONFIG.showAllFilters || hoursKnown / venues.length >= CONFIG.minFilterCoverage) {
-      extras += '<button type="button" class="bf-chip" aria-pressed="false" data-special="openNow">Open now</button>';
-    }
-    if (CONFIG.SHOW_BANYA_APPROVED) {
-      extras += '<button type="button" class="bf-chip" aria-pressed="false" data-special="approvedOnly">Banya Approved</button>';
-    }
-    if (extras) html = '<div class="bf-group"><div class="bf-chips">' + extras + '</div></div>' + html;
-
     html += '<div class="bf-filter-foot"><span>Places that haven\'t listed a detail are hidden while that filter is on.</span>' +
       '<button type="button" class="bf-link-btn" data-clear>Clear filters</button></div>';
+    if (!visible.length) this.$('.bf-filter-toggle').hidden = true;
 
     var panel = this.$('.bf-filters');
     panel.innerHTML = html;
-    panel.addEventListener('click', function (e) {
+    var onChip = function (e) {
       if (e.target.closest('[data-clear]')) return self.clearFilters();
       var chip = e.target.closest('.bf-chip');
       if (!chip) return;
       var on = chip.getAttribute('aria-pressed') !== 'true';
       chip.setAttribute('aria-pressed', String(on));
-      var special = chip.getAttribute('data-special');
-      if (special) {
-        self[special] = on;
+      var quickId = chip.getAttribute('data-quick');
+      if (quickId) {
+        self.quick[quickId] = on;
       } else {
         var key = chip.getAttribute('data-key'), val = chip.getAttribute('data-val');
         var list = self.active[key] || [];
         self.active[key] = on ? list.concat(val) : list.filter(function (x) { return x !== val; });
       }
       self.update();
-    });
+    };
+    panel.addEventListener('click', onChip);
+    this.$('.bf-quick-chips').addEventListener('click', onChip);
   };
 
   Finder.prototype.clearFilters = function () {
     this.active = {};
-    this.openNow = false;
-    this.approvedOnly = false;
-    this.root.querySelectorAll('.bf-filters .bf-chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+    this.quick = {};
+    this.root.querySelectorAll('.bf-filters .bf-chip, .bf-quick .bf-chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', 'false');
+    });
     this.update();
   };
 
@@ -333,9 +361,8 @@
       return [].concat(v[key] || []).some(function (val) { return chosen.indexOf(val) !== -1; });
     });
     if (!ok) return false;
-    if (this.openNow && isOpenNow(v) !== true) return false;
-    if (this.approvedOnly && v.banya_approved !== true) return false;
-    return true;
+    var quick = this.quick;
+    return QUICK.every(function (q) { return !quick[q.id] || q.test(v); });
   };
 
   Finder.prototype.results = function () {
@@ -363,8 +390,10 @@
   function cardHtml(v) {
     var tags = [];
     (v.heat_types || []).forEach(function (h) { tags.push(LABELS.heat_types[h]); });
-    if (LABELS.cold_plunge[v.cold_plunge]) tags.push(LABELS.cold_plunge[v.cold_plunge]);
+    if (HAS_PLUNGE.indexOf(v.cold_plunge) !== -1) tags.push(LABELS.cold_plunge[v.cold_plunge]);
+    if (v.outdoor === true) tags.push('Outdoor');
     if (LABELS.access[v.access]) tags.push(LABELS.access[v.access]);
+    if (v.gender_policy === 'women_only' || v.gender_policy === 'men_only') tags.push(LABELS.gender_policy[v.gender_policy]);
     if (v.day_pass_price_usd != null) tags.push('From $' + v.day_pass_price_usd);
     var open = isOpenNow(v);
     var meta = [LABELS.venue_type[v.venue_type]];

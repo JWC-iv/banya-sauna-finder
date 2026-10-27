@@ -1,0 +1,5 @@
+# Raw pipeline downloads are large and can be re-created by scripts/pull_candidates.py
+data/raw/
+# Secret keys never go in git
+.env
+__pycache__/
