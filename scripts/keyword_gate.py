@@ -12,6 +12,8 @@ Safe to stop and re-run: places already checked are skipped (matched by source i
 the earlier steps with more data is fine).
 
 Run from the project folder:  py scripts/keyword_gate.py
+To re-check only places that failed for temporary reasons (address lookup, rate limits, timeouts),
+more slowly:                  py scripts/keyword_gate.py retry
 """
 import html
 import json
@@ -30,6 +32,9 @@ RAW = ROOT / "data" / "raw"
 PAGES = RAW / "pages"
 USER_AGENT = "Mozilla/5.0 (compatible; banya-sauna-finder/0.1; +https://github.com/JWC-iv/banya-sauna-finder)"
 WORKERS = 96
+# Too many at once overwhelms Windows' address lookups ("getaddrinfo failed"), so retries go slower.
+RETRY_WORKERS = 16
+RETRYABLE = re.compile(r"getaddrinfo|Too Many Requests|timed out|UNEXPECTED_EOF|Connection reset|Temporary failure", re.I)
 
 SAUNA_WORDS = re.compile(
     r"\bsaunas?\b|steam room|\bbanyas?\b|cold plunge|plunge pool|ice bath|hammam|jjimjil|jimjil|"
@@ -77,9 +82,14 @@ if __name__ == "__main__":
     places = json.loads((RAW / "deduped.json").read_text(encoding="utf-8"))
     results_path = RAW / "gate_results.json"
     done = {r["key"]: r for r in json.loads(results_path.read_text())} if results_path.exists() else {}
-    todo = [(key_of(p), p) for p in places if key_of(p) not in done and p.get("website")]
+    retry = len(sys.argv) > 1 and sys.argv[1] == "retry"
+    if retry:
+        todo = [(key_of(p), p) for p in places
+                if key_of(p) in done and RETRYABLE.search(done[key_of(p)]["error"] or "") and p.get("website")]
+    else:
+        todo = [(key_of(p), p) for p in places if key_of(p) not in done and p.get("website")]
     print(f"{len(places)} places, {len(done)} already checked, {len(todo)} to check")
-    with ThreadPoolExecutor(WORKERS) as pool:
+    with ThreadPoolExecutor(RETRY_WORKERS if retry else WORKERS) as pool:
         futures = [pool.submit(check, k, p) for k, p in todo]
         for n, f in enumerate(as_completed(futures), 1):
             r = f.result()

@@ -285,7 +285,10 @@ def run_sample(client, model, n):
 
 
 def run_submit(client, model):
-    items = candidates()
+    # Skip places already answered, so a follow-up run only pays for new candidates.
+    checked_path = RAW / "checked.json"
+    already = {r["key"] for r in json.loads(checked_path.read_text(encoding="utf-8"))} if checked_path.exists() else set()
+    items = [it for it in candidates() if it[0]["key"] not in already]
     print(f"Fetching pages for {len(items)} places (takes a while)...")
     prepared = prepare(items)
     requests = [Request(custom_id=key[:64], params=MessageCreateParamsNonStreaming(**request_params(model, prompt)))
@@ -322,7 +325,11 @@ def run_collect(client):
                 answer = {"error": r.result.type}
             results.append({"key": info["key"], "place": places.get(info["key"]), "pages": info["urls"],
                             "answer": answer})
-    (RAW / "checked.json").write_text(json.dumps(results, indent=1, default=str), encoding="utf-8")
+    # Merge with answers from earlier batches; newer answers replace older ones.
+    checked_path = RAW / "checked.json"
+    merged = {r["key"]: r for r in json.loads(checked_path.read_text(encoding="utf-8"))} if checked_path.exists() else {}
+    merged.update({r["key"]: r for r in results})
+    checked_path.write_text(json.dumps(list(merged.values()), indent=1, default=str), encoding="utf-8")
     yes = sum(1 for r in results if r["answer"].get("sells_public_sauna_access"))
     print(f"{yes}/{len(results)} sell sauna access. Cost about ${cost(meta['model'], tin, tout, True):.2f}. "
           f"Saved to data/raw/checked.json")

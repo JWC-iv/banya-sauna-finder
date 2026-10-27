@@ -25,7 +25,11 @@ LISTS = {
     "heat_types": {"traditional", "wood_fired", "infrared", "steam", "smoke", "banya"},
     "extras": {"aufguss", "venik", "massage", "food"},
 }
-REQUIRED = ["id", "name", "venue_type", "lat", "lng", "sources", "last_verified"]
+REQUIRED = ["id", "name", "venue_type", "lat", "lng", "city", "state", "sources", "last_verified"]
+US_STATES = {"AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA",
+             "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
+             "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+             "WV", "WI", "WY", "PR"}
 
 
 def in_us(lat, lng):
@@ -54,6 +58,8 @@ def problems(venues):
         if isinstance(v.get("lat"), (int, float)) and isinstance(v.get("lng"), (int, float)):
             if not in_us(v["lat"], v["lng"]):
                 yield f"{vid}: location {v['lat']}, {v['lng']} is outside the US"
+        if v.get("state") not in US_STATES:
+            yield f"{vid}: state {v.get('state')!r} is not a US state"
         if vid in seen:
             yield f"{vid}: duplicate id"
         seen.add(vid)
