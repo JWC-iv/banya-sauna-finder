@@ -71,7 +71,7 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
 6. `coverage.py`: fill rate per filter field.
 
 ## Testing workflow
-- Work locally first: serve `site/` with a local web server and test in the browser pane.
+- Work locally first: the `finder` entry in `.claude/launch.json` runs `py -m http.server 8000` from the repo root; open http://localhost:8000/site/ in the browser pane.
 - Use `data/sample_sf.json` as the fixture while building the UI: 7 San Francisco venues, fields filled only from each venue's own website (2026-10-27). It is test data and must never be published. John has no special local knowledge, so it is not hand-verified; real checking is `enrich.py`'s job.
 - Test the real embed on a hidden or password-protected Squarespace page before linking it publicly.
 - Commit to git after every working change, with messages in plain English.
@@ -91,7 +91,13 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
 - [x] Sample dataset: `data/sample_sf.json` (San Francisco, 7 venues; Atlanta dropped)
   - Schema gaps found: no `heat_types` value for a dry sauna whose heater type isn't stated (Kabuki, Onsen, Archimedes' Finnish room, Vital Ice), no `cold_plunge` value for "has one, type unknown", and no `gender_policy` value for women-only (Pearl is stored as `segregated`). Decide before `enrich.py`.
   - The Overpass (OpenStreetMap) API timed out from this PC on 2026-10-27; retry or use a different mirror for the national pull.
-- [ ] UI prototype (Bachan's layout, Banya Press styling)
+- [x] UI prototype (2026-10-27): `site/index.html` (local test page), `site/finder.js`, `site/finder.css`
+  - finder.js loads its own CSS, the Labrada font and MapLibre 4.7.1, so the Code Block only needs a div, a config script and one script tag.
+  - Filters are the `FILTERS` list at the top of finder.js. A filter hides itself below 90% coverage unless `showAllFilters: true` (set on the local test page).
+  - Address search uses OpenStreetMap's free Nominatim geocoder. Fine for testing; revisit before real traffic (their policy limits heavy use).
+  - "Open now" understands simple OSM hours like `Mo,We-Fr 12:00-23:00` and uses each venue's state to pick its time zone.
+  - Map pin is a placeholder black drop with steam lines; owner may replace it.
+- Other sauna directories checked 2026-10-27 (sauna-directory.pages.dev, saunaorplunge.pages.dev): they show Google ratings, which points to scraped Google Maps data, and they say "All rights reserved". Do not copy their data. SaunaTimes' public sauna map and the North American Sauna Society ambassador reviews are curated sources worth contacting about a partnership.
 - [ ] National candidate pull
 - [ ] Enrichment and coverage report
 - [ ] Banya Approved criteria (owner decides)

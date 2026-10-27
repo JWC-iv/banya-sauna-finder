@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sauna Finder (local test)</title>
+  <!-- Local test page only. On Squarespace, the Code Block holds just the
+       div, the config script and the finder.js script below. -->
+  <style>
+    body { margin: 0; background: #EBCEAD; }
+    .page { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div id="banya-finder"></div>
+  </div>
+  <script>
+    window.BANYA_FINDER_CONFIG = {
+      dataUrl: '../data/sample_sf.json',
+      // The sample is too small for the 90% coverage rule, so show every filter while building.
+      showAllFilters: true
+    };
+  </script>
+  <script src="finder.js"></script>
+</body>
+</html>
