@@ -72,7 +72,7 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
 
 ## Testing workflow
 - Work locally first: serve `site/` with a local web server and test in the browser pane.
-- Use `data/sample_atlanta.json` as the fixture while building the UI. It does not exist yet: no Atlanta list has been collected, so it has to be built (candidates drafted, then checked by John).
+- Use `data/sample_sf.json` as the fixture while building the UI: 7 San Francisco venues, fields filled only from each venue's own website (2026-10-27). It is test data and must never be published. John has no special local knowledge, so it is not hand-verified; real checking is `enrich.py`'s job.
 - Test the real embed on a hidden or password-protected Squarespace page before linking it publicly.
 - Commit to git after every working change, with messages in plain English.
 
@@ -88,7 +88,9 @@ Venue type, heat type, cold plunge, access, gender policy, session type, open no
 - [x] John is signed in to `gh` as JWC-iv. Commits in this repo use name "John" and the GitHub noreply email (set in the repo's own Git settings) so the personal email isn't published.
 - [x] Public GitHub repo created: https://github.com/JWC-iv/banya-sauna-finder (remote `origin`, branch `main`). Push after each commit.
 - [ ] Turn on GitHub Pages once `site/` has files.
-- [ ] Atlanta sample dataset
+- [x] Sample dataset: `data/sample_sf.json` (San Francisco, 7 venues; Atlanta dropped)
+  - Schema gaps found: no `heat_types` value for a dry sauna whose heater type isn't stated (Kabuki, Onsen, Archimedes' Finnish room, Vital Ice), no `cold_plunge` value for "has one, type unknown", and no `gender_policy` value for women-only (Pearl is stored as `segregated`). Decide before `enrich.py`.
+  - The Overpass (OpenStreetMap) API timed out from this PC on 2026-10-27; retry or use a different mirror for the national pull.
 - [ ] UI prototype (Bachan's layout, Banya Press styling)
 - [ ] National candidate pull
 - [ ] Enrichment and coverage report
