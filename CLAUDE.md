@@ -111,6 +111,10 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
   - "Open now" understands simple OSM hours like `Mo,We-Fr 12:00-23:00` and uses each venue's state to pick its time zone.
   - Map pin is a placeholder black drop with steam lines; owner may replace it.
 - Other sauna directories checked 2026-10-27 (sauna-directory.pages.dev, saunaorplunge.pages.dev): they show Google ratings, which points to scraped Google Maps data, and they say "All rights reserved". Do not copy their data. SaunaTimes' public sauna map and the North American Sauna Society ambassador reviews are curated sources worth contacting about a partnership.
-- [ ] National candidate pull (running 2026-10-27; Python needed the `truststore` package to trust Windows' certificates)
+- [x] National candidate pull and website check (2026-10-27). Python needs the `truststore` package to trust Windows' certificates.
+  - Overture: 243k loose matches -> prefilter 53k -> homepage word check 4,089 -> Haiku batch -> 1,999 venues after merging duplicates (43 gyms parked). AI cost $2.92, plus $2.34 for the Haiku/Opus test.
+  - Homepage check at 96 parallel requests overwhelmed Windows' DNS ("getaddrinfo failed"); `keyword_gate.py retry` re-checks those at 16. About 8,400 remaining failures are dead domains.
+  - Known gaps: about 380 strong-name candidates have no website (e.g. Chicago Sweatlodge) and are not covered yet; chain locations (Restore Hyper Wellness, Perspire) may carry another location's hours or prices.
+  - `data/venues.json` is built locally but NOT committed yet: 98 venues use OpenStreetMap data (23 come only from OSM), and publishing them triggers ODbL share-alike. Decide before publishing.
 - [ ] Enrichment and coverage report
 - [ ] Banya Approved criteria (owner decides)

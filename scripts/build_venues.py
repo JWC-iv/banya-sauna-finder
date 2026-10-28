@@ -11,10 +11,12 @@ Run from the project folder:  py scripts/build_venues.py
 """
 import datetime
 import json
+import math
 import re
 import time
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 
 import truststore
 
@@ -59,6 +61,43 @@ def reverse_geocode(lat, lng, cache):
                       "state": STATE_CODES.get(a.get("state")), "country": a.get("country_code")}
         time.sleep(1.1)
     return cache[key]
+
+
+def meters(a, b):
+    dlat = math.radians(b["lat"] - a["lat"])
+    dlng = math.radians(b["lng"] - a["lng"]) * math.cos(math.radians(a["lat"]))
+    return 6371000 * math.hypot(dlat, dlng)
+
+
+def squash(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def site_key(url):
+    if not url:
+        return None
+    u = urlparse(url)
+    return u.netloc.lower().removeprefix("www.") + u.path.rstrip("/")
+
+
+def filled(v):
+    return sum(1 for f in FIELDS if v.get(f) not in (None, "unknown", []))
+
+
+def merge_duplicates(venues):
+    """The same venue can arrive twice with pins a few hundred metres apart (different sources).
+    Merge pairs in the same state within 1 km that share a name, website or street address."""
+    kept = []
+    for v in sorted(venues, key=filled, reverse=True):  # the record with more details wins
+        dup = next((k for k in kept if k["state"] == v["state"] and meters(k, v) < 1000 and (
+            squash(k["name"]) == squash(v["name"]) or
+            (site_key(k["website"]) and site_key(k["website"]) == site_key(v["website"])) or
+            (squash(k["address"]) and squash(k["address"]) == squash(v["address"])))), None)
+        if dup:
+            dup["sources"] += [s for s in v["sources"] if s not in dup["sources"]]
+        else:
+            kept.append(v)
+    return kept
 
 
 def slug(*parts):
@@ -130,6 +169,11 @@ if __name__ == "__main__":
         else:
             dropped[v["venue_type"]] = dropped.get(v["venue_type"], 0) + 1
     geo_path.write_text(json.dumps(geo_cache, indent=1), encoding="utf-8")
+    before = len(venues)
+    venues = merge_duplicates(venues)
+    kept_ids = {v["id"] for v in venues}
+    evidence = {k: e for k, e in evidence.items() if k in kept_ids}
+    print(f"Merged {before - len(venues)} duplicates")
     venues.sort(key=lambda v: (v["state"] or "", v["city"] or "", v["name"]))
     (DATA / "parked").mkdir(exist_ok=True)
     (DATA / "venues.json").write_text(json.dumps(
