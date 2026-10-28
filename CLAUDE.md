@@ -61,7 +61,7 @@ Never store data from the Google Places API except place_id. Google's terms forb
 Built around three visitor questions: can I go today, what kind of heat, what's the experience.
 - **Quick toggles, always visible:** Open now · Walk-ins (`access = walk_in`) · Cold plunge (any value except none/unknown) · Wood-fired · Outdoor · Banya Approved.
 - **"More filters" panel:** Type · Heat · Private or social (`session_type`).
-- **Infrared-only places are hidden by default** (John, 2026-10-27). In the first national run 71% of venues were infrared-only (mostly Restore Hyper Wellness and Perspire). A dashed "+ Infrared studios (N)" chip adds them; picking Infrared under Heat also adds them. Places with any other heat source, or unknown heat, always show.
+- **Infrared-only places are hidden by default** (John, 2026-10-27). In the first national run 71% of venues were infrared-only (mostly Restore Hyper Wellness and Perspire). An "Infrared" chip, last in the quick row and styled like the others, adds them; picking Infrared under Heat also adds them. Places with any other heat source, or unknown heat, always show.
 - **Later, once data exists:** women-only hours, clothing-optional, rituals (aufguss, venik), price. Gender policy and attire are collected but are not launch filters; websites rarely state them clearly.
 - A filter only ships once its field is filled (not `unknown`) for at least 90% of published venues. `scripts/coverage.py` reports this.
 - **Banya Approved** criteria are TBD by the owner. The filter is controlled by `SHOW_BANYA_APPROVED` in the site config and stays hidden until enough venues are reviewed.
@@ -110,6 +110,7 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
   - Address search uses OpenStreetMap's free Nominatim geocoder. Fine for testing; revisit before real traffic (their policy limits heavy use).
   - "Open now" understands simple OSM hours like `Mo,We-Fr 12:00-23:00` and uses each venue's state to pick its time zone.
   - Map pin is a placeholder black drop with steam lines; owner may replace it.
+  - Layout (John, 2026-10-27): the map starts framed on the contiguous US; phones open on the Map tab; on phones the quick chips are one row you swipe sideways.
 - Other sauna directories checked 2026-10-27 (sauna-directory.pages.dev, saunaorplunge.pages.dev): they show Google ratings, which points to scraped Google Maps data, and they say "All rights reserved". Do not copy their data. SaunaTimes' public sauna map and the North American Sauna Society ambassador reviews are curated sources worth contacting about a partnership.
 - [x] National candidate pull and website check (2026-10-27). Python needs the `truststore` package to trust Windows' certificates.
   - Overture: 243k loose matches -> prefilter 53k -> homepage word check 4,089 -> Haiku batch -> 1,999 venues after merging duplicates (43 gyms parked). AI cost $2.92, plus $2.34 for the Haiku/Opus test.

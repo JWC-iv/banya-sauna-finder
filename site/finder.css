@@ -102,8 +102,6 @@
   font-size: 15px;
 }
 .bf-chip[aria-pressed="true"] { background: var(--bf-ink); color: var(--bf-sand); }
-.bf-chip--add { border-style: dashed; }
-.bf-chip--add[aria-pressed="true"] { border-style: solid; }
 .bf-filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--bf-gray); }
 .bf-link-btn { background: none; border: 0; padding: 0; text-decoration: underline; font-size: 15px; }
 
@@ -143,6 +141,22 @@
 .bf-pop h4 { font-family: var(--bf-heading); font-weight: 300; font-size: 20px; margin: 0 0 4px; }
 .bf-pop p { margin: 0 0 4px; font-size: 14px; }
 .bf-pop a { color: var(--bf-ink); }
+
+/* Phones: filter chips in one row you swipe sideways, so the map stays near the top */
+@media (max-width: 899px) {
+  .bf-quick {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .bf-quick::-webkit-scrollbar { display: none; }
+  .bf-quick .bf-chips { flex-wrap: nowrap; }
+  .bf-quick .bf-chip, .bf-quick .bf-filter-toggle { flex: 0 0 auto; white-space: nowrap; font-size: 14px; padding: 5px 11px; }
+  .bf-search-msg:empty { display: none; }
+  .bf-intro { margin-bottom: 16px; }
+}
 
 /* Wide screens: list and map side by side, no tabs */
 @media (min-width: 900px) {

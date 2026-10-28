@@ -224,6 +224,8 @@
   Finder.prototype.start = function () {
     var self = this;
     this.renderShell();
+    // Phones open on the map; wide screens show list and map side by side anyway.
+    if (this.isNarrow()) this.setView('map');
     loadVenues()
       .then(function (venues) {
         self.venues = venues;
@@ -257,8 +259,8 @@
       '<div class="bf-filters" hidden></div>' +
       '<div class="bf-toolbar">' +
       '  <div class="bf-tabs" role="tablist">' +
-      '    <button class="bf-tab" role="tab" data-view="list" aria-selected="true">List</button>' +
       '    <button class="bf-tab" role="tab" data-view="map" aria-selected="false">Map</button>' +
+      '    <button class="bf-tab" role="tab" data-view="list" aria-selected="true">List</button>' +
       '  </div>' +
       '  <span class="bf-count" aria-live="polite"></span>' +
       '</div>' +
@@ -302,13 +304,13 @@
     var quick = QUICK.filter(function (q) {
       return (!q.onlyIf || CONFIG[q.onlyIf]) && self.hasCoverage(q.known);
     });
-    var infraredCount = venues.filter(isInfraredOnly).length;
-    this.$('.bf-quick-chips').innerHTML = (infraredCount ?
-      '<button type="button" class="bf-chip bf-chip--add" aria-pressed="false" data-infrared>+ Infrared studios (' +
-      infraredCount.toLocaleString() + ')</button>' : '') +
-      quick.map(function (q) {
-        return '<button type="button" class="bf-chip" aria-pressed="false" data-quick="' + q.id + '">' + esc(q.label) + '</button>';
-      }).join('');
+    // "Infrared" sits last like any other chip, but it adds places instead of narrowing:
+    // infrared-only studios stay hidden until it's on.
+    var hasInfrared = venues.some(isInfraredOnly);
+    this.$('.bf-quick-chips').innerHTML = quick.map(function (q) {
+      return '<button type="button" class="bf-chip" aria-pressed="false" data-quick="' + q.id + '">' + esc(q.label) + '</button>';
+    }).join('') +
+      (hasInfrared ? '<button type="button" class="bf-chip" aria-pressed="false" data-infrared>Infrared</button>' : '');
 
     var visible = FILTERS.filter(function (f) {
       return self.hasCoverage(function (v) { return hasValue(v, f); });
@@ -502,8 +504,8 @@
     var map = this.map = new maplibregl.Map({
       container: this.$('.bf-map'),
       style: CONFIG.mapStyle,
-      center: [-98.5, 39.8],
-      zoom: 3,
+      bounds: CONTIGUOUS_US,
+      fitBoundsOptions: { padding: 20 },
       attributionControl: { compact: true }
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -564,12 +566,11 @@
     this.map.getSource('bf-venues').setData(this.geojson());
   };
 
+  // Before a search, frame the contiguous US; Alaska and Hawaii would zoom the map out to the Arctic.
+  var CONTIGUOUS_US = [[-124.8, 24.4], [-66.9, 49.4]];
+
   Finder.prototype.fitToResults = function () {
-    var list = this.current || [];
-    if (!list.length) return;
-    var bounds = new maplibregl.LngLatBounds([list[0].lng, list[0].lat], [list[0].lng, list[0].lat]);
-    list.forEach(function (v) { bounds.extend([v.lng, v.lat]); });
-    this.map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 0 });
+    this.map.fitBounds(CONTIGUOUS_US, { padding: 20, duration: 0 });
   };
 
   Finder.prototype.markSelected = function (id) {
