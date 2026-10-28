@@ -18,6 +18,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
+import duckdb
 import truststore
 
 truststore.inject_into_ssl()
@@ -100,6 +101,37 @@ def merge_duplicates(venues):
     return kept
 
 
+def strip_osm(venues):
+    """No OpenStreetMap data in the published list (John, 2026-10-27): ODbL share-alike would make the
+    whole list free to copy. Venues found only through OSM are dropped. Merged venues get their name,
+    location, address, phone and website back from the Overture record alone; if Overture had no website,
+    the website (and so everything read from it) came via OSM, and the venue is dropped."""
+    ids = {s.split(":", 1)[1] for v in venues for s in v["sources"] if s.startswith("overture:")}
+    con = duckdb.connect()
+    path = (RAW / "overture_us.parquet").as_posix()
+    rows = {r[0]: r for r in con.execute(
+        f"SELECT id, name, lat, lng, address, city, state, zip, phone, website FROM '{path}' "
+        f"WHERE id IN (SELECT unnest(?::VARCHAR[]))", [list(ids)]).fetchall()}
+    kept, dropped = [], 0
+    for v in venues:
+        if not any(s.startswith("osm:") for s in v["sources"]):
+            kept.append(v)
+            continue
+        ov = next((rows[s.split(":", 1)[1]] for s in v["sources"]
+                   if s.startswith("overture:") and s.split(":", 1)[1] in rows), None)
+        if ov is None or not ov[9]:
+            dropped += 1
+            continue
+        _, name, lat, lng, address, city, state, zip_, phone, website = ov
+        v.update({"name": name, "lat": round(lat, 6), "lng": round(lng, 6), "address": address,
+                  "city": city or v["city"], "state": (state or v["state"] or "").upper()[:2],
+                  "zip": (zip_ or "")[:5] or None, "phone": phone,
+                  "website": clean_website(website)})
+        v["sources"] = [s for s in v["sources"] if not s.startswith("osm:")]
+        kept.append(v)
+    return kept, dropped
+
+
 def slug(*parts):
     s = "-".join(p for p in parts if p)
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:80]
@@ -171,13 +203,18 @@ if __name__ == "__main__":
     geo_path.write_text(json.dumps(geo_cache, indent=1), encoding="utf-8")
     before = len(venues)
     venues = merge_duplicates(venues)
+    print(f"Merged {before - len(venues)} duplicates")
+    venues, n_osm = strip_osm(venues)
+    gyms, _ = strip_osm(gyms)
+    print(f"Dropped {n_osm} venues that depended on OpenStreetMap data")
     kept_ids = {v["id"] for v in venues}
     evidence = {k: e for k, e in evidence.items() if k in kept_ids}
-    print(f"Merged {before - len(venues)} duplicates")
     venues.sort(key=lambda v: (v["state"] or "", v["city"] or "", v["name"]))
     (DATA / "parked").mkdir(exist_ok=True)
+    # Compact, because the page downloads this file.
     (DATA / "venues.json").write_text(json.dumps(
-        {"generated": today, "count": len(venues), "venues": venues}, indent=1, ensure_ascii=False), encoding="utf-8")
+        {"generated": today, "count": len(venues), "venues": venues},
+        separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     (DATA / "parked" / "gyms.json").write_text(json.dumps(gyms, indent=1, ensure_ascii=False), encoding="utf-8")
     (DATA / "evidence.json").write_text(json.dumps(evidence, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"{len(venues)} venues, {len(gyms)} gyms parked. Dropped: {dropped}")

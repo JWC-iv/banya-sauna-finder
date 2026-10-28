@@ -115,6 +115,7 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
   - Overture: 243k loose matches -> prefilter 53k -> homepage word check 4,089 -> Haiku batch -> 1,999 venues after merging duplicates (43 gyms parked). AI cost $2.92, plus $2.34 for the Haiku/Opus test.
   - Homepage check at 96 parallel requests overwhelmed Windows' DNS ("getaddrinfo failed"); `keyword_gate.py retry` re-checks those at 16. About 8,400 remaining failures are dead domains.
   - Known gaps: about 380 strong-name candidates have no website (e.g. Chicago Sweatlodge) and are not covered yet; chain locations (Restore Hyper Wellness, Perspire) may carry another location's hours or prices.
-  - `data/venues.json` is built locally but NOT committed yet: 98 venues use OpenStreetMap data (23 come only from OSM), and publishing them triggers ODbL share-alike. Decide before publishing.
+  - **No OpenStreetMap data is published** (John, 2026-10-27), to avoid ODbL share-alike. `build_venues.py` drops OSM-only venues and rebuilds merged ones from their Overture record. OSM is still pulled as a lead source but never reaches `data/venues.json`.
+  - Published 2026-10-27: 1,976 venues (570 in the default traditional view), 30 gyms parked, evidence quotes in `data/evidence.json`.
 - [ ] Enrichment and coverage report
 - [ ] Banya Approved criteria (owner decides)

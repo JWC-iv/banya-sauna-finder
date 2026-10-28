@@ -1,13 +1,12 @@
 <!--
   Paste everything below this comment into a Squarespace Code Block (mode: HTML, "Display Source" off).
   The block stays tiny: the finder's code, styles and data all load from GitHub Pages.
-  While testing it uses the San Francisco sample; switch dataUrl to data/venues.json when the real data exists,
-  and remove showAllFilters so thin filters hide themselves.
+  showAllFilters stays on while testing; remove it before launch so filters with too little data hide themselves.
 -->
 <div id="banya-finder"></div>
 <script>
   window.BANYA_FINDER_CONFIG = {
-    dataUrl: 'https://jwc-iv.github.io/banya-sauna-finder/data/sample_sf.json',
+    dataUrl: 'https://jwc-iv.github.io/banya-sauna-finder/data/venues.json',
     showAllFilters: true
   };
 </script>
