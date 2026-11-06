@@ -3,7 +3,8 @@
 ## What this is
 A map-based directory of US saunas, embedded as a page on banyapress.com.
 - banyapress.com is a **Squarespace** site run by Banya Press (sauna-themed books and merch). The finder must match its look: logo, fonts and colors come from the live site, so pull them from there.
-- Layout reference is the Bachan's store locator (https://bachans.com/pages/find-us): address search bar on top, tabs to switch between **List** and **Map**, simple result cards (name, address, distance, phone, one accent link), logo-style map pins on a light, low-contrast basemap. Copy the layout, not their branding.
+- Layout reference is the Bachan's store locator (https://bachans.com/pages/find-us): address search bar on top, tabs to switch between **List** and **Map**, simple result cards (name, address, distance, phone, one accent link), logo-style map pins. Copy the layout, not their branding.
+- Basemap colors (John, 2026-11-06): blue water and red-orange land, like a glowing electric sauna coil. `MAP_PAINT` in `site/finder.js` holds them.
 
 ## Who you're working with
 John is building this and is new to web development. Explain each step in plain language: what a file is for, what a command does, and why. No unexplained jargon. Before any step that touches the live Squarespace site, stop and say exactly what will change.

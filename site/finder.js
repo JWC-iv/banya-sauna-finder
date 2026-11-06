@@ -511,6 +511,7 @@
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
     map.on('load', function () {
+      paintMap(map);
       var img = new Image(80, 96);
       img.onload = function () {
         map.addImage('bf-pin', img, { pixelRatio: 2 });
@@ -565,6 +566,65 @@
     if (!this.map || !this.map.getSource('bf-venues')) return;
     this.map.getSource('bf-venues').setData(this.geojson());
   };
+
+  // Map colors: blue water, land the red-orange of a glowing electric sauna coil.
+  // The free map style's layers get repainted when it loads, so this is the only place colors live.
+  var COIL = '#E8501F', COIL_DARK = '#D4441A', COIL_LIGHT = '#F27A4A', COIL_ROAD = '#FFC9A8', WATER = '#2F7EC4';
+  var MAP_PAINT = {
+    background: { 'background-color': COIL },
+    park: { 'fill-color': COIL_DARK },
+    water: { 'fill-color': WATER },
+    landcover_wood: { 'fill-color': COIL_DARK },
+    landcover_ice_shelf: { 'fill-color': COIL_LIGHT },
+    landcover_glacier: { 'fill-color': COIL_LIGHT },
+    landuse_residential: { 'fill-color': COIL },
+    waterway: { 'line-color': WATER },
+    building: { 'fill-color': COIL_DARK, 'fill-outline-color': '#B83A14' },
+    'aeroway-area': { 'fill-color': COIL_LIGHT },
+    'aeroway-taxiway': { 'line-color': COIL_LIGHT },
+    'aeroway-runway-casing': { 'line-color': COIL_LIGHT },
+    'aeroway-runway': { 'line-color': COIL_ROAD },
+    road_area_pier: { 'fill-color': COIL },
+    road_pier: { 'line-color': COIL },
+    highway_path: { 'line-color': COIL_LIGHT },
+    highway_minor: { 'line-color': COIL_LIGHT },
+    highway_major_casing: { 'line-color': COIL_DARK },
+    highway_major_inner: { 'line-color': COIL_ROAD },
+    highway_major_subtle: { 'line-color': COIL_LIGHT },
+    highway_motorway_casing: { 'line-color': COIL_DARK },
+    highway_motorway_inner: { 'line-color': COIL_ROAD },
+    highway_motorway_subtle: { 'line-color': COIL_LIGHT },
+    highway_motorway_bridge_casing: { 'line-color': COIL_DARK },
+    highway_motorway_bridge_inner: { 'line-color': COIL_ROAD },
+    tunnel_motorway_casing: { 'line-color': COIL_DARK },
+    tunnel_motorway_inner: { 'line-color': COIL_LIGHT },
+    railway_transit: { 'line-color': COIL_DARK },
+    railway_transit_dashline: { 'line-color': COIL_LIGHT },
+    railway_service: { 'line-color': COIL_DARK },
+    railway_service_dashline: { 'line-color': COIL_LIGHT },
+    railway: { 'line-color': COIL_DARK },
+    railway_dashline: { 'line-color': COIL_LIGHT },
+    boundary_3: { 'line-color': 'rgba(0,0,0,0.35)' },
+    boundary_2: { 'line-color': 'rgba(0,0,0,0.45)' },
+    boundary_disputed: { 'line-color': 'rgba(0,0,0,0.35)' },
+    waterway_line_label: { 'text-color': '#fff', 'text-halo-color': WATER },
+    water_name_point_label: { 'text-color': '#fff', 'text-halo-color': WATER },
+    water_name_line_label: { 'text-color': '#fff', 'text-halo-color': WATER }
+  };
+  // Every other text label: black on a soft coil glow instead of a stark white outline.
+  var LABEL_HALO = 'rgba(255,190,150,0.8)';
+
+  function paintMap(map) {
+    Object.keys(MAP_PAINT).forEach(function (id) {
+      if (!map.getLayer(id)) return;
+      Object.keys(MAP_PAINT[id]).forEach(function (prop) { map.setPaintProperty(id, prop, MAP_PAINT[id][prop]); });
+    });
+    map.getStyle().layers.forEach(function (l) {
+      if (l.type !== 'symbol' || MAP_PAINT[l.id] || /shield/.test(l.id)) return;
+      map.setPaintProperty(l.id, 'text-color', '#000');
+      map.setPaintProperty(l.id, 'text-halo-color', LABEL_HALO);
+    });
+  }
 
   // Before a search, frame the contiguous US; Alaska and Hawaii would zoom the map out to the Arctic.
   var CONTIGUOUS_US = [[-124.8, 24.4], [-66.9, 49.4]];
