@@ -569,7 +569,8 @@
 
   // Map colors: blue water, land the red-orange of a glowing electric sauna coil.
   // The free map style's layers get repainted when it loads, so this is the only place colors live.
-  var COIL = '#E8501F', COIL_DARK = '#D4441A', COIL_LIGHT = '#F27A4A', COIL_ROAD = '#FFC9A8', WATER = '#2F7EC4';
+  var COIL = '#E8734A', COIL_DARK = '#DC6A43', COIL_LIGHT = '#F2946F', COIL_ROAD = '#FFDCC6', WATER = '#79C6EC';
+  var WATER_LABEL = '#14506F';
   var MAP_PAINT = {
     background: { 'background-color': COIL },
     park: { 'fill-color': COIL_DARK },
@@ -579,7 +580,7 @@
     landcover_glacier: { 'fill-color': COIL_LIGHT },
     landuse_residential: { 'fill-color': COIL },
     waterway: { 'line-color': WATER },
-    building: { 'fill-color': COIL_DARK, 'fill-outline-color': '#B83A14' },
+    building: { 'fill-color': COIL_DARK, 'fill-outline-color': '#C4583A' },
     'aeroway-area': { 'fill-color': COIL_LIGHT },
     'aeroway-taxiway': { 'line-color': COIL_LIGHT },
     'aeroway-runway-casing': { 'line-color': COIL_LIGHT },
@@ -607,12 +608,12 @@
     boundary_3: { 'line-color': 'rgba(0,0,0,0.35)' },
     boundary_2: { 'line-color': 'rgba(0,0,0,0.45)' },
     boundary_disputed: { 'line-color': 'rgba(0,0,0,0.35)' },
-    waterway_line_label: { 'text-color': '#fff', 'text-halo-color': WATER },
-    water_name_point_label: { 'text-color': '#fff', 'text-halo-color': WATER },
-    water_name_line_label: { 'text-color': '#fff', 'text-halo-color': WATER }
+    waterway_line_label: { 'text-color': WATER_LABEL, 'text-halo-color': WATER },
+    water_name_point_label: { 'text-color': WATER_LABEL, 'text-halo-color': WATER },
+    water_name_line_label: { 'text-color': WATER_LABEL, 'text-halo-color': WATER }
   };
   // Every other text label: black on a soft coil glow instead of a stark white outline.
-  var LABEL_HALO = 'rgba(255,190,150,0.8)';
+  var LABEL_HALO = 'rgba(255,210,185,0.8)';
 
   function paintMap(map) {
     Object.keys(MAP_PAINT).forEach(function (id) {
