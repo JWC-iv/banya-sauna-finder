@@ -538,6 +538,7 @@
     // clicking a card is tagged and skipped, so the list doesn't change under the finger.
     map.on('moveend', function (e) {
       if (e && e.fromCard) return;
+      self.viewBeforeCard = null;  // you moved the map yourself, so that's the view to keep
       self.renderList();
     });
     this.mapReady = true;
@@ -682,13 +683,18 @@
     }
   };
 
-  // Unselect: clear the highlight and close the pop-up. The map stays where it is.
+  // Unselect: clear the highlight, close the pop-up, and go back to the view from before a
+  // card click zoomed in (unless you've moved the map yourself since then).
   Finder.prototype.deselect = function () {
     this.selectedId = null;
     this.markSelected(null);
     var popup = this.popup;
     this.popup = null;
     if (popup) popup.remove();
+    if (this.viewBeforeCard && this.map) {
+      this.map.jumpTo(this.viewBeforeCard, { fromCard: true });
+    }
+    this.viewBeforeCard = null;
   };
 
   Finder.prototype.select = function (id, from) {
@@ -708,6 +714,8 @@
     }
     if (!this.map) return;
     if (from !== 'map') {
+      // Remember where the map was before the first card zoomed it, so unselecting can go back.
+      if (!this.viewBeforeCard) this.viewBeforeCard = { center: this.map.getCenter(), zoom: this.map.getZoom() };
       this.map.jumpTo({ center: [v.lng, v.lat], zoom: Math.max(this.map.getZoom(), 13) }, { fromCard: true });
     }
     var old = this.popup;
