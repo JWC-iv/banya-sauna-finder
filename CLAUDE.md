@@ -65,7 +65,12 @@ Built around three visitor questions: can I go today, what kind of heat, what's 
 - **Infrared-only places are hidden by default** (John, 2026-10-27). In the first national run 71% of venues were infrared-only (mostly Restore Hyper Wellness and Perspire). An "Infrared" chip, last in the quick row and styled like the others, adds them; picking Infrared under Heat also adds them. Places with any other heat source, or unknown heat, always show.
 - **Later, once data exists:** women-only hours, clothing-optional, rituals (aufguss, venik), price. Gender policy and attire are collected but are not launch filters; websites rarely state them clearly.
 - A filter only ships once its field is filled (not `unknown`) for at least 90% of published venues. `scripts/coverage.py` reports this.
-- **Banya Approved** criteria are TBD by the owner. The filter is controlled by `SHOW_BANYA_APPROVED` in the site config and stays hidden until enough venues are reviewed.
+- **Banya Approved standard** (John, an owner, signed off 2026-11-11). No fixed number; every venue that meets the bar qualifies.
+  - Must have both: real heat (traditional, wood-fired, banya or smoke; not infrared-only) and a cold plunge of any kind. Members-only is fine.
+  - Plus at least two of: wood-fired/smoke heat or a banya room; a cold pool or natural-water plunge (not just a tub); rituals (aufguss or venik); social bathing (communal sessions, several heat rooms, a real bathhouse); outdoor sauna or bathing area; named by 2+ independent sources (articles, guides, SaunaTimes, North American Sauna Society).
+  - Out: franchise wellness chains, and places where the sauna is only an add-on to massages or facials.
+  - Each pick gets a short write-up (`banya_approved_notes`) saying why, with source links for any outside mentions.
+  - AI first pass shows as Banya Approved on the hidden test page. `banya_approved_by` records "claude-first-pass" vs "john"; before the page goes public, show only John-confirmed picks or confirm the rest.
 
 ## Data pipeline (`scripts/`)
 Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones list about 1,000-1,700 real venues nationally; bigger counts include gyms, massage and pools. Target about 1,500 good venues, not raw volume.
