@@ -129,7 +129,20 @@
 .bf-tag { font-size: 13px; border: 1px solid var(--bf-line); border-radius: 999px; padding: 1px 9px; }
 .bf-open { font-weight: 400; }
 .bf-accent { font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
-.bf-approved { display: inline-block; font-size: 13px; background: var(--bf-ink); color: var(--bf-sand); padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.bf-approved {
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bf-ink);
+  color: var(--bf-sand);
+  padding: 2px 8px;
+  margin-bottom: 6px;
+}
+.bf-why { border-left: 2px solid var(--bf-ink); padding-left: 10px; margin: 8px 0; }
+.bf-why p { font-size: 15px; margin: 0 0 4px; }
+.bf-why .bf-seen { font-size: 13px; color: var(--bf-gray); }
+.bf-why .bf-seen a { color: var(--bf-gray); }
 .bf-empty { padding: 24px 12px; color: var(--bf-gray); }
 
 .bf-map { height: 70vh; min-height: 420px; border: 1px solid var(--bf-line); }

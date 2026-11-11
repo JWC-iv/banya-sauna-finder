@@ -18,6 +18,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
+import banya_approved  # the editorial picks, kept in their own file so rebuilds never lose them
 import duckdb
 import truststore
 
@@ -209,6 +210,7 @@ if __name__ == "__main__":
     print(f"Dropped {n_osm} venues that depended on OpenStreetMap data")
     kept_ids = {v["id"] for v in venues}
     evidence = {k: e for k, e in evidence.items() if k in kept_ids}
+    print(f"{banya_approved.overlay(venues)} venues carry Banya Approved picks from data/banya_approved.json")
     venues.sort(key=lambda v: (v["state"] or "", v["city"] or "", v["name"]))
     (DATA / "parked").mkdir(exist_ok=True)
     # Compact, because the page downloads this file.

@@ -17,7 +17,9 @@
     // A filter only appears once this share of venues has a known value for it.
     minFilterCoverage: 0.9,
     showAllFilters: false,
-    SHOW_BANYA_APPROVED: false
+    // On while the page is hidden for testing (John, 2026-11-11). Before the public launch, either
+    // confirm the first-pass picks or show only John's (banya_approved_by === 'john').
+    SHOW_BANYA_APPROVED: true
   }, window.BANYA_FINDER_CONFIG || {});
 
   var MAPLIBRE_JS = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
@@ -388,8 +390,10 @@
     var self = this;
     var list = this.venues.filter(function (v) { return self.matches(v); });
     list.forEach(function (v) { v._miles = self.origin ? milesBetween(self.origin, v) : null; });
+    // After a search: nearest first. Before one: Banya Approved first, then A to Z.
+    var rank = function (v) { return CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? 0 : 1; };
     list.sort(function (a, b) {
-      return self.origin ? a._miles - b._miles : a.name.localeCompare(b.name);
+      return self.origin ? a._miles - b._miles : (rank(a) - rank(b)) || a.name.localeCompare(b.name);
     });
     return list;
   };
@@ -425,10 +429,28 @@
     var meta = [LABELS.venue_type[v.venue_type]];
     if (v._miles != null) meta.push(v._miles < 10 ? v._miles.toFixed(1) + ' mi' : Math.round(v._miles) + ' mi');
     if (open !== null) meta.push('<span class="bf-open">' + (open ? 'Open now' : 'Closed now') + '</span>');
-    var approved = CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? '<span class="bf-approved">Banya Approved</span>' : '';
-    return '<li class="bf-card" data-id="' + esc(v.id) + '" tabindex="0">' +
-      '<h3>' + esc(v.name) + approved + '</h3>' +
+    var isApproved = CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true;
+    var approvedHtml = '';
+    if (isApproved) {
+      var names = {};
+      var seenIn = (v.banya_approved_sources || []).filter(function (s) {  // one link per publication
+        var key = (s.name || '').toLowerCase();
+        if (!/^https?:\/\//.test(s.url) || names[key]) return false;
+        names[key] = true;
+        return true;
+      });
+      approvedHtml = '<div class="bf-why">' +
+        (v.banya_approved_notes ? '<p>' + esc(v.banya_approved_notes) + '</p>' : '') +
+        (seenIn.length ? '<p class="bf-seen">As seen in ' + seenIn.slice(0, 3).map(function (s) {
+          return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name || 'press') + '</a>';
+        }).join(', ') + '</p>' : '') +
+        '</div>';
+    }
+    return '<li class="bf-card' + (isApproved ? ' is-approved' : '') + '" data-id="' + esc(v.id) + '" tabindex="0">' +
+      (isApproved ? '<span class="bf-approved">Banya Approved</span>' : '') +
+      '<h3>' + esc(v.name) + '</h3>' +
       '<p class="bf-meta">' + meta.map(function (m, i) { return i === meta.length - 1 && open !== null ? m : esc(m); }).join(' · ') + '</p>' +
+      approvedHtml +
       '<p>' + esc(v.address) + ', ' + esc(v.city) + ', ' + esc(v.state) + ' ' + esc(v.zip || '') + '</p>' +
       (v.phone ? '<p><a href="tel:' + esc(v.phone.replace(/[^\d+]/g, '')) + '">' + esc(formatPhone(v.phone)) + '</a></p>' : '') +
       (tags.length ? '<div class="bf-tags">' + tags.map(function (t) { return '<span class="bf-tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
@@ -660,7 +682,9 @@
     if (this.popup) this.popup.remove();
     this.popup = new maplibregl.Popup({ offset: [0, -44], closeButton: true, maxWidth: '260px' })
       .setLngLat([v.lng, v.lat])
-      .setHTML('<div class="bf-pop"><h4>' + esc(v.name) + '</h4>' +
+      .setHTML('<div class="bf-pop">' +
+        (CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? '<span class="bf-approved">Banya Approved</span>' : '') +
+        '<h4>' + esc(v.name) + '</h4>' +
         '<p>' + esc(LABELS.venue_type[v.venue_type]) + (v._miles != null ? ' · ' + v._miles.toFixed(1) + ' mi' : '') + '</p>' +
         '<p>' + esc(v.address) + ', ' + esc(v.city) + '</p>' +
         (v.website ? '<p><a class="bf-accent" href="' + esc(v.website) + '" target="_blank" rel="noopener">Visit website →</a></p>' : '') +

@@ -48,6 +48,8 @@ session_type       enum     communal | private | both | unknown
 gender_policy      enum     coed | segregated | both | women_only | men_only | unknown
 banya_approved     true|false|null    editorial; null = not yet reviewed
 banya_approved_notes, banya_approved_date
+banya_approved_by  "john" | "claude-first-pass"
+banya_approved_sources  array of {name, url}: independent coverage behind the pick
 # collected later, not filters at launch:
 day_pass_price_usd number|null
 attire             enum     swimsuit | towel | nude | mixed | unknown
@@ -125,4 +127,9 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
   - **No OpenStreetMap data is published** (John, 2026-10-27), to avoid ODbL share-alike. `build_venues.py` drops OSM-only venues and rebuilds merged ones from their Overture record. OSM is still pulled as a lead source but never reaches `data/venues.json`.
   - Published 2026-10-27: 1,976 venues (570 in the default traditional view), 30 gyms parked, evidence quotes in `data/evidence.json`.
 - [ ] Enrichment and coverage report
-- [ ] Banya Approved criteria (owner decides)
+- [x] Banya Approved criteria signed off by John (2026-11-11); first pass done.
+  - `scripts/banya_approved.py`: free scoring on venue data, then Haiku + web search (max 3 searches/venue) for independent coverage and a write-up. 210 venues searched for $5.11; 151 approved, 93 with press.
+  - Picks live in `data/banya_approved.json` (editorial file; John's entries win and survive re-runs). `build_venues.py` and `banya_approved.py apply` copy them into `data/venues.json`.
+  - Page: Banya Approved chip, badge, write-up and "As seen in" links; approved venues sort first before a search. `SHOW_BANYA_APPROVED` is on while the page is hidden.
+  - For John's review: Labcebut Spa (Auburn, WA) is a casino-resort spa; hotels are out of scope.
+- [ ] John reviews the 151 first-pass picks before the page goes public.

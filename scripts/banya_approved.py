@@ -176,6 +176,25 @@ def decide():
     return picks
 
 
+def overlay(venues):
+    """Copy the editorial picks onto venue records. Used here and by build_venues.py."""
+    if not APPROVED.exists():
+        return 0
+    picks = json.loads(APPROVED.read_text(encoding="utf-8"))
+    n = 0
+    for v in venues:
+        p = picks.get(v["id"])
+        if not p:
+            continue
+        v["banya_approved"] = bool(p["approved"])
+        v["banya_approved_notes"] = p.get("note")
+        v["banya_approved_date"] = p.get("date")
+        v["banya_approved_by"] = p.get("by")
+        v["banya_approved_sources"] = [{"name": s.get("name"), "url": s["url"]} for s in p.get("sources", [])]
+        n += bool(p["approved"])
+    return n
+
+
 def run_apply():
     today = datetime.date.today().isoformat()
     existing = json.loads(APPROVED.read_text(encoding="utf-8")) if APPROVED.exists() else {}
@@ -188,6 +207,11 @@ def run_apply():
     APPROVED.write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"{sum(1 for e in out.values() if e['approved'])} approved "
           f"({sum(1 for e in out.values() if e['by'] == 'john')} by John). Saved to {APPROVED}")
+    # Also update the published list now, without re-running the whole data pipeline.
+    path = DATA / "venues.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    print(f"Marked {overlay(data['venues'])} venues as Banya Approved in {path}")
+    path.write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":
