@@ -118,7 +118,8 @@ Plan chosen 2026-10-27 after reviewing other US sauna finders. The careful ones 
   - Address search uses OpenStreetMap's free Nominatim geocoder. Fine for testing; revisit before real traffic (their policy limits heavy use).
   - "Open now" understands simple OSM hours like `Mo,We-Fr 12:00-23:00` and uses each venue's state to pick its time zone.
   - Map pin is a placeholder black drop with steam lines; owner may replace it.
-  - Layout (John, 2026-10-27): the map starts framed on the contiguous US; phones open on the Map tab; on phones the quick chips are one row you swipe sideways.
+  - Layout (John, 2026-10-27, updated 2026-11-11): the map starts framed on the contiguous US; on phones the quick chips are one row you swipe sideways. No List/Map tabs: desktop shows list left, map right; phones show the map, then the list below it (above Squarespace's newsletter signup).
+  - The list shows only saunas inside the current map view (up to 50 cards), Banya Approved first, then nearest to the search point or the map's center. Clicking a card zooms the map without changing the list. Banya Approved is the first quick chip.
 - Other sauna directories checked 2026-10-27 (sauna-directory.pages.dev, saunaorplunge.pages.dev): they show Google ratings, which points to scraped Google Maps data, and they say "All rights reserved". Do not copy their data. SaunaTimes' public sauna map and the North American Sauna Society ambassador reviews are curated sources worth contacting about a partnership.
 - [x] National candidate pull and website check (2026-10-27). Python needs the `truststore` package to trust Windows' certificates.
   - Overture: 243k loose matches -> prefilter 53k -> homepage word check 4,089 -> Haiku batch -> 1,999 venues after merging duplicates (43 gyms parked). AI cost $2.92, plus $2.34 for the Haiku/Opus test.

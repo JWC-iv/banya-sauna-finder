@@ -61,6 +61,8 @@
   // Quick toggles, always on screen. `known` says whether a venue has data for it,
   // which decides if the toggle has enough coverage to show.
   var QUICK = [
+    { id: 'approved', label: 'Banya Approved', onlyIf: 'SHOW_BANYA_APPROVED',
+      test: function (v) { return v.banya_approved === true; }, known: function () { return true; } },
     { id: 'openNow', label: 'Open now',
       test: function (v) { return isOpenNow(v) === true; }, known: function (v) { return !!v.hours; } },
     { id: 'walkIn', label: 'Walk-ins',
@@ -72,10 +74,11 @@
       test: function (v) { return (v.heat_types || []).indexOf('wood_fired') !== -1; },
       known: function (v) { return (v.heat_types || []).length > 0; } },
     { id: 'outdoor', label: 'Outdoor',
-      test: function (v) { return v.outdoor === true; }, known: function (v) { return v.outdoor != null; } },
-    { id: 'approved', label: 'Banya Approved', onlyIf: 'SHOW_BANYA_APPROVED',
-      test: function (v) { return v.banya_approved === true; }, known: function () { return true; } }
+      test: function (v) { return v.outdoor === true; }, known: function (v) { return v.outdoor != null; } }
   ];
+
+  // The list shows the saunas inside the current map view, up to this many cards.
+  var LIST_LIMIT = 50;
 
   // The "More filters" panel. Add, remove or reorder entries here; nothing else needs to change.
   var FILTERS = [
@@ -226,8 +229,6 @@
   Finder.prototype.start = function () {
     var self = this;
     this.renderShell();
-    // Phones open on the map; wide screens show list and map side by side anyway.
-    if (this.isNarrow()) this.setView('map');
     loadVenues()
       .then(function (venues) {
         self.venues = venues;
@@ -260,15 +261,12 @@
       '</div>' +
       '<div class="bf-filters" hidden></div>' +
       '<div class="bf-toolbar">' +
-      '  <div class="bf-tabs" role="tablist">' +
-      '    <button class="bf-tab" role="tab" data-view="map" aria-selected="false">Map</button>' +
-      '    <button class="bf-tab" role="tab" data-view="list" aria-selected="true">List</button>' +
-      '  </div>' +
       '  <span class="bf-count" aria-live="polite"></span>' +
       '</div>' +
+      // Wide screens: list on the left, map on the right. Phones: map first, list below it.
       '<div class="bf-body">' +
       '  <div class="bf-panel bf-panel--list"><ul class="bf-list"></ul></div>' +
-      '  <div class="bf-panel bf-panel--map" hidden><div class="bf-map"></div></div>' +
+      '  <div class="bf-panel bf-panel--map"><div class="bf-map"></div></div>' +
       '</div>';
 
     this.$('.bf-search').addEventListener('submit', function (e) {
@@ -276,9 +274,6 @@
       self.search(this.q.value.trim());
     });
     this.$('[data-locate]').addEventListener('click', function () { self.locate(); });
-    this.root.querySelectorAll('.bf-tab').forEach(function (tab) {
-      tab.addEventListener('click', function () { self.setView(tab.getAttribute('data-view')); });
-    });
     this.$('.bf-filter-toggle').addEventListener('click', function () {
       var panel = self.$('.bf-filters');
       panel.hidden = !panel.hidden;
@@ -390,24 +385,45 @@
     var self = this;
     var list = this.venues.filter(function (v) { return self.matches(v); });
     list.forEach(function (v) { v._miles = self.origin ? milesBetween(self.origin, v) : null; });
-    // After a search: nearest first. Before one: Banya Approved first, then A to Z.
-    var rank = function (v) { return CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? 0 : 1; };
-    list.sort(function (a, b) {
-      return self.origin ? a._miles - b._miles : (rank(a) - rank(b)) || a.name.localeCompare(b.name);
-    });
+    if (self.origin) list.sort(function (a, b) { return a._miles - b._miles; });
     return list;
   };
 
+  // Everything that matches the filters goes on the map; the list then shows what's in view.
   Finder.prototype.update = function () {
-    var list = this.results();
-    this.current = list;
-    var n = list.length;
-    this.$('.bf-count').textContent = n.toLocaleString() + (n === 1 ? ' sauna' : ' saunas') +
-      (this.origin ? ' · closest to ' + this.origin.label + ' first' : '');
-    this.$('.bf-list').innerHTML = n ? list.map(cardHtml).join('') :
-      '<li class="bf-empty">No saunas match these filters. <button type="button" class="bf-link-btn" data-clear>Clear filters</button></li>';
-    if (this.selectedId) this.markSelected(this.selectedId);
+    this.current = this.results();
     this.updateMap();
+    this.renderList();
+  };
+
+  // The list: saunas inside the map's current view, Banya Approved first, then closest to the
+  // search point (or to the middle of the map when nobody has searched).
+  Finder.prototype.renderList = function () {
+    var self = this;
+    var all = this.current || [];
+    var inView = all;
+    var center = this.origin;
+    if (this.mapReady) {
+      var b = this.map.getBounds();
+      inView = all.filter(function (v) { return b.contains([v.lng, v.lat]); });
+      if (!center) { var c = this.map.getCenter(); center = { lat: c.lat, lng: c.lng }; }
+    }
+    var rank = function (v) { return CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? 0 : 1; };
+    var dist = function (v) { return center ? milesBetween(center, v) : 0; };
+    inView = inView.slice().sort(function (a, b) {
+      return (rank(a) - rank(b)) || (dist(a) - dist(b)) || a.name.localeCompare(b.name);
+    });
+    var n = inView.length;
+    this.$('.bf-count').textContent = n.toLocaleString() + (n === 1 ? ' sauna' : ' saunas') + ' in this map view' +
+      (n > LIST_LIMIT ? ' · showing ' + LIST_LIMIT + ', zoom in to see the rest' : '');
+    var html = inView.slice(0, LIST_LIMIT).map(cardHtml).join('');
+    if (!n) {
+      html = all.length
+        ? '<li class="bf-empty">No saunas in this part of the map. Zoom out or move the map to see more.</li>'
+        : '<li class="bf-empty">No saunas match these filters. <button type="button" class="bf-link-btn" data-clear>Clear filters</button></li>';
+    }
+    this.$('.bf-list').innerHTML = html;
+    if (this.selectedId) this.markSelected(this.selectedId);
   };
 
   // "+12065683240" or "2065683240" -> "(206) 568-3240"; anything else is shown as stored.
@@ -458,22 +474,6 @@
       '</li>';
   }
 
-  Finder.prototype.setView = function (view) {
-    this.view = view;
-    this.root.querySelectorAll('.bf-tab').forEach(function (t) {
-      t.setAttribute('aria-selected', String(t.getAttribute('data-view') === view));
-    });
-    this.$('.bf-panel--list').hidden = view !== 'list';
-    this.$('.bf-panel--map').hidden = view !== 'map';
-    if (!this.map) return;
-    this.map.resize();
-    // A map that loaded while hidden had no size, so frame the results now.
-    if (view === 'map' && this.needsFit) {
-      this.needsFit = false;
-      this.fitToResults();
-    }
-  };
-
   Finder.prototype.isNarrow = function () { return window.matchMedia('(max-width: 899px)').matches; };
 
   // ---------- Search ----------
@@ -517,7 +517,8 @@
     // Show the search point and the nearest few saunas.
     var bounds = new maplibregl.LngLatBounds([lng, lat], [lng, lat]);
     this.current.slice(0, 5).forEach(function (v) { bounds.extend([v.lng, v.lat]); });
-    this.map.fitBounds(bounds, { padding: 60, maxZoom: 13 });
+    // Jump straight there; the list updates the moment the map settles.
+    this.map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 0 });
   };
 
   // ---------- Map ----------
@@ -531,6 +532,16 @@
       attributionControl: { compact: true }
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+    // Whenever the map stops moving, the list catches up with what's in view. This works as soon
+    // as the map exists, even while slow map tiles are still arriving. A move we started by
+    // clicking a card is tagged and skipped, so the list doesn't change under the finger.
+    map.on('moveend', function (e) {
+      if (e && e.fromCard) return;
+      self.renderList();
+    });
+    this.mapReady = true;
+    this.renderList();
 
     map.on('load', function () {
       paintMap(map);
@@ -568,8 +579,6 @@
           map.on('mouseleave', layer, function () { map.getCanvas().style.cursor = ''; });
         });
         if (self.selectedId) self.select(self.selectedId, 'list');
-        else if (self.$('.bf-map').offsetWidth) self.fitToResults();
-        else self.needsFit = true;
       };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(PIN_SVG);
     });
@@ -674,11 +683,13 @@
       var card = this.$('.bf-card[data-id="' + id + '"]');
       if (card && !this.isNarrow()) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else if (this.isNarrow()) {
-      this.needsFit = false;
-      this.setView('map');
+      // On phones the list sits under the map, so bring the map back into view.
+      this.$('.bf-map').scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
     if (!this.map) return;
-    if (from !== 'map') this.map.jumpTo({ center: [v.lng, v.lat], zoom: Math.max(this.map.getZoom(), 13) });
+    if (from !== 'map') {
+      this.map.jumpTo({ center: [v.lng, v.lat], zoom: Math.max(this.map.getZoom(), 13) }, { fromCard: true });
+    }
     if (this.popup) this.popup.remove();
     this.popup = new maplibregl.Popup({ offset: [0, -44], closeButton: true, maxWidth: '260px' })
       .setLngLat([v.lng, v.lat])

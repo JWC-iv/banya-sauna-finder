@@ -52,7 +52,7 @@
 .bf-btn--ghost { background: transparent; color: var(--bf-ink) !important; }
 .bf-search-msg { margin: 8px 0 0; font-size: 15px; color: var(--bf-gray); min-height: 1.4em; }
 
-/* Toolbar: tabs, filter button, count */
+/* Toolbar: the count of saunas in the map view */
 .bf-toolbar {
   display: flex;
   align-items: center;
@@ -61,17 +61,7 @@
   margin: 16px 0 12px;
   border-bottom: 1px solid var(--bf-line);
 }
-.bf-tabs { display: flex; }
-.bf-tab {
-  background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  padding: 10px 14px;
-  font-size: 17px;
-  margin-bottom: -1px;
-}
-.bf-tab[aria-selected="true"] { border-bottom-color: var(--bf-ink); }
-.bf-count { color: var(--bf-gray); font-size: 15px; margin-left: auto; padding: 10px 0; }
+.bf-count { color: var(--bf-gray); font-size: 15px; padding: 10px 0; }
 .bf-filter-toggle {
   background: none;
   border: 1px solid var(--bf-ink);
@@ -145,8 +135,12 @@
 .bf-why .bf-seen a { color: var(--bf-gray); }
 .bf-empty { padding: 24px 12px; color: var(--bf-gray); }
 
-.bf-map { height: 70vh; min-height: 420px; border: 1px solid var(--bf-line); }
-.bf-panel[hidden] { display: none; }
+.bf-map { height: 60vh; min-height: 380px; border: 1px solid var(--bf-line); }
+
+/* Phones: map first, then the list of saunas in view underneath it. */
+.bf-body { display: flex; flex-direction: column; }
+.bf-panel--map { order: 1; }
+.bf-panel--list { order: 2; margin-top: 16px; border-top: 1px solid var(--bf-line); }
 
 /* Map popups */
 .bf .maplibregl-popup-content { background: var(--bf-sand); border-radius: 0; padding: 12px 14px; font-family: var(--bf-body); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
@@ -171,12 +165,11 @@
   .bf-intro { margin-bottom: 16px; }
 }
 
-/* Wide screens: list and map side by side, no tabs */
+/* Wide screens: list on the left, map on the right */
 @media (min-width: 900px) {
-  .bf-tabs { display: none; }
-  .bf-count { margin-left: 0; }
   .bf-body { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 16px; height: 680px; }
-  .bf-panel[hidden] { display: block; }
+  .bf-panel--list { order: 1; margin-top: 0; }
+  .bf-panel--map { order: 2; }
   .bf-filters:not([hidden]) { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); column-gap: 24px; }
   .bf-filter-foot { grid-column: 1 / -1; }
   .bf-panel--list { overflow-y: auto; border-top: 1px solid var(--bf-line); }
