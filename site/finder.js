@@ -578,7 +578,15 @@
           map.on('mouseenter', layer, function () { map.getCanvas().style.cursor = 'pointer'; });
           map.on('mouseleave', layer, function () { map.getCanvas().style.cursor = ''; });
         });
-        if (self.selectedId) self.select(self.selectedId, 'list');
+        // Tapping empty map unselects.
+        map.on('click', function (e) {
+          if (!map.queryRenderedFeatures(e.point, { layers: ['bf-pins', 'bf-clusters'] }).length) self.deselect();
+        });
+        if (self.selectedId) {  // a card was tapped before the map finished loading
+          var id = self.selectedId;
+          self.selectedId = null;
+          self.select(id, 'list');
+        }
       };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(PIN_SVG);
     });
@@ -674,9 +682,21 @@
     }
   };
 
+  // Unselect: clear the highlight and close the pop-up. The map stays where it is.
+  Finder.prototype.deselect = function () {
+    this.selectedId = null;
+    this.markSelected(null);
+    var popup = this.popup;
+    this.popup = null;
+    if (popup) popup.remove();
+  };
+
   Finder.prototype.select = function (id, from) {
+    var self = this;
     var v = this.venues.filter(function (x) { return x.id === id; })[0];
     if (!v) return;
+    // Tapping the card or pin that's already selected unselects it.
+    if (this.selectedId === id) return this.deselect();
     this.selectedId = id;
     this.markSelected(id);
     if (from === 'map') {
@@ -690,8 +710,10 @@
     if (from !== 'map') {
       this.map.jumpTo({ center: [v.lng, v.lat], zoom: Math.max(this.map.getZoom(), 13) }, { fromCard: true });
     }
-    if (this.popup) this.popup.remove();
-    this.popup = new maplibregl.Popup({ offset: [0, -44], closeButton: true, maxWidth: '260px' })
+    var old = this.popup;
+    this.popup = null;
+    if (old) old.remove();
+    var popup = this.popup = new maplibregl.Popup({ offset: [0, -44], closeButton: true, closeOnClick: false, maxWidth: '260px' })
       .setLngLat([v.lng, v.lat])
       .setHTML('<div class="bf-pop">' +
         (CONFIG.SHOW_BANYA_APPROVED && v.banya_approved === true ? '<span class="bf-approved">Banya Approved</span>' : '') +
@@ -701,6 +723,8 @@
         (v.website ? '<p><a class="bf-accent" href="' + esc(v.website) + '" target="_blank" rel="noopener">Visit website →</a></p>' : '') +
         '</div>')
       .addTo(this.map);
+    // Closing the pop-up with its × unselects too (but not when another sauna replaces it).
+    popup.on('close', function () { if (self.popup === popup) self.deselect(); });
   };
 
   // ---------- Start ----------
